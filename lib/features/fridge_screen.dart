@@ -66,9 +66,9 @@ class _FridgeScreenState extends ConsumerState<FridgeScreen> {
     final v = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Brave Search API (opcjonalnie)'),
+        title: const Text('Klucz wyszukiwania (opcjonalnie)'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Bez klucza szukam w Kwestii Smaku. Z kluczem szukam w całym polskim internecie. Darmowy klucz: brave.com/search/api.', style: TextStyle(fontSize: 13)),
+          const Text('Bez klucza szukam w Kwestii Smaku. Z kluczem (np. Tavily, darmowy limit bez karty: tavily.com) szukam w całym internecie. Dostawcę wybierzesz w Ja → Dostawca API.', style: TextStyle(fontSize: 13)),
           const SizedBox(height: 10),
           TextField(controller: ctrl, obscureText: true, decoration: const InputDecoration(labelText: 'Klucz API')),
         ]),
@@ -95,7 +95,7 @@ class _FridgeScreenState extends ConsumerState<FridgeScreen> {
             HeroBackHeader('Co mam w lodówce', actions: [
               Transform.translate(
                 offset: const Offset(12, 0),
-                child: IconButton(icon: Icon(Icons.key, color: AppColors.text2), tooltip: 'Klucz Brave Search', onPressed: _braveKey),
+                child: IconButton(icon: Icon(Icons.key, color: AppColors.text2), tooltip: 'Klucz wyszukiwania', onPressed: _braveKey),
               ),
             ]),
             const SizedBox(height: 8),

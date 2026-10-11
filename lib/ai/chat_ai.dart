@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import '../services/web_search.dart';
+import '../services/web_search.dart' as ws;
+
 import 'diet_ai.dart';
 
 class ChatRecipe {
@@ -66,11 +67,11 @@ extension ChatAi on DietAi {
     required String context,
     required bool webSearch,
   }) async {
-    var hits = <WebHit>[];
+    var hits = <ws.WebHit>[];
     var searched = false;
-    if (webSearch && braveKey != null && braveKey!.isNotEmpty) {
+    if (webSearch) {
       searched = true;
-      hits = await braveSearch(question, braveKey, count: 6);
+      hits = await ws.webSearch(question, braveKey, count: 6);
     }
     final src = [for (final h in hits.take(5)) ChatSource(h.title, h.url, h.snippet)];
     final results = src.isEmpty

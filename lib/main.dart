@@ -13,10 +13,12 @@ import 'data/generic_foods.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data/off_pack.dart';
 import 'providers.dart';
+import 'services/web_search.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting("pl");
+  await SearchBackend.load();
   final db = await AppDb.open();
   await seedFoodsOnce(db);
   final settings = await AiSettingsStore().load();

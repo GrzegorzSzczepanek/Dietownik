@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../ai/ai_settings.dart';
 import '../ai/embeddings.dart';
 import '../ai/llm_api.dart';
+import '../services/web_search.dart';
 import '../core/localization.dart';
 import '../core/theme.dart';
 import '../providers.dart';
@@ -28,6 +29,7 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
   late final _model = TextEditingController(text: cfg.model);
   late final _vision = TextEditingController(text: cfg.visionModel);
   final _brave = TextEditingController();
+  String _searchProvider = SearchBackend.provider;
   late final _embModel = TextEditingController(text: cfg.embeddingModel);
   final _key = TextEditingController();
   bool _hasKey = false;
@@ -64,6 +66,7 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
     cfg = cfg.copyWith(
         baseUrl: _url.text.trim(), model: _model.text.trim(), visionModel: _vision.text.trim(), embeddingModel: _embModel.text.trim());
     await ctrl.setApi(cfg);
+    await SearchBackend.save(_searchProvider);
     final b = _brave.text.trim();
     if (b.isEmpty) {
       await const FlutterSecureStorage().delete(key: 'brave_key');
@@ -227,12 +230,30 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
             ),
           ),
           const SizedBox(height: 14),
+          const SizedBox(height: 18),
+          Text('Wyszukiwanie w internecie', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          const SizedBox(height: 4),
+          Text('Czat i brakujące produkty korzystają z wyszukiwarki. Bez klucza spróbuję DuckDuckGo i Wikipedii, ale to bywa zawodne.',
+              style: TextStyle(color: AppColors.text2, height: 1.35)),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final e in SearchBackend.providers.entries)
+              ChoiceChip(
+                label: Text(e.key == 'tavily' ? 'Tavily' : 'Brave'),
+                selected: _searchProvider == e.key,
+                onSelected: (_) => setState(() => _searchProvider = e.key),
+                showCheckmark: false,
+              ),
+          ]),
+          const SizedBox(height: 10),
           TextField(
             controller: _brave,
             obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Brave Search — klucz (wyszukiwanie w sieci)',
-              helperText: 'Opcjonalnie, darmowy: brave.com/search/api. Używany do brakujących produktów i przepisów.',
+            decoration: InputDecoration(
+              labelText: 'Klucz wyszukiwania (opcjonalnie)',
+              helperText: _searchProvider == 'tavily'
+                  ? 'Darmowy limit bez karty: tavily.com, zakładka API Keys.'
+                  : 'Brave wymaga karty i rozlicza po przekroczeniu miesięcznego kredytu.',
               helperMaxLines: 2,
             ),
           ),

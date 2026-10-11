@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../domain/models.dart';
 import 'recipe_import.dart';
+import 'web_search.dart';
 
 class RecipeMatch {
   RecipeMatch(this.recipe, this.score, this.have, this.missing, {this.verified = true});
@@ -102,17 +103,11 @@ class RecipeWebSearch {
     }
   }
 
+  /// Whole-web recipes need a search key (Tavily/Brave); keyless results are too noisy for this.
   Future<List<String>> _brave(String q) async {
     if (braveKey == null || braveKey!.isEmpty) return [];
-    try {
-      final r = await _dio.get('https://api.search.brave.com/res/v1/web/search',
-          queryParameters: {'q': 'przepis $q', 'country': 'pl', 'search_lang': 'pl', 'count': 12},
-          options: Options(headers: {'X-Subscription-Token': braveKey, 'Accept': 'application/json'}));
-      final results = ((r.data as Map)['web']?['results'] as List?) ?? const [];
-      return [for (final e in results) '${(e as Map)['url']}'];
-    } catch (_) {
-      return [];
-    }
+    final hits = await webSearch('przepis $q', braveKey, count: 12, dio: _dio);
+    return [for (final h in hits) h.url];
   }
 
   Future<List<RecipeMatch>> search(List<String> pantry, {int maxPages = 14}) async {
