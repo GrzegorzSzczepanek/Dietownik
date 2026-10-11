@@ -7,6 +7,7 @@ import 'ai/edge_runtime.dart';
 import 'app.dart';
 import 'data/db.dart';
 import 'data/food_seed.dart';
+import 'data/off_pack.dart';
 import 'providers.dart';
 
 Future<void> main() async {
@@ -14,6 +15,7 @@ Future<void> main() async {
   await initializeDateFormatting("pl");
   final db = await AppDb.open();
   if (await db.foodCount() == 0) await db.seedFoods(seedFoods);
+  await loadOffPackOnce(db);
   final settings = await AiSettingsStore().load();
   final engineReady = await initEdgeAi();
   final goals = await GoalsNotifier.load();
