@@ -182,7 +182,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
             width: 110,
             height: 110,
             decoration: BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
-            child: const Icon(Icons.mic, color: Colors.white, size: 54),
+            child: Icon(Icons.mic, color: AppColors.onAccent, size: 54),
           ),
         ),
         const SizedBox(height: 16),

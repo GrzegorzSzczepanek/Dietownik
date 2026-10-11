@@ -13,7 +13,7 @@ class SectionCard extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
         width: double.infinity,
         child: Material(
-          color: Colors.white,
+          color: AppColors.bg,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
@@ -113,7 +113,7 @@ class EngineToggle extends StatelessWidget {
             child: Text(label,
                 style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : AppColors.muted)),
+                    color: selected ? AppColors.onAccent : AppColors.muted)),
           ),
         );
     return Container(

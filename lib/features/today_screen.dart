@@ -192,7 +192,7 @@ class _QuickButton extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Material(
-        color: Colors.white,
+        color: AppColors.bg,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18), side: BorderSide(color: AppColors.border)),
         child: InkWell(

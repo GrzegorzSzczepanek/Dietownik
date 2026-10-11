@@ -9,6 +9,7 @@ import '../domain/models.dart';
 import '../providers.dart';
 import 'common.dart';
 import 'label_flow.dart';
+import 'scan_screen.dart';
 import 'widgets.dart';
 
 class FoodSearchScreen extends ConsumerStatefulWidget {
@@ -119,6 +120,12 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         Expanded(
           child: ListView(children: [
             if (_q.text.isEmpty && _local.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 0), child: Eyebrow('Ostatnio używane i popularne')),
+            if (_q.text.isEmpty)
+              ListTile(
+                leading: Icon(Icons.qr_code_scanner, color: AppColors.accent),
+                title: const Text('Zeskanuj kod'),
+                onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ScanScreen())),
+              ),
             for (final f in _local) tile(f),
             if (_loadingWeb) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
             if (_web.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 12, 16, 4), child: Eyebrow('Z Open Food Facts')),

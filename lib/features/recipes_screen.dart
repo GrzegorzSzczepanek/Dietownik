@@ -9,6 +9,7 @@ import '../providers.dart';
 import '../services/recipe_import.dart';
 import 'common.dart';
 import 'fridge_screen.dart';
+import 'scan_screen.dart';
 import 'shopping_screen.dart';
 import 'widgets.dart';
 
@@ -21,7 +22,14 @@ class RecipesScreen extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
-        const Text('Przepisy', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+        Row(children: [
+          Expanded(child: Text('Przepisy', style: display(30))),
+          IconButton(
+            tooltip: 'Zeskanuj kod',
+            icon: Icon(Icons.qr_code_scanner, color: AppColors.accent),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen())),
+          ),
+        ]),
         const SizedBox(height: 12),
         Row(children: [
           Expanded(child: _Btn(Icons.link, 'Z linku', () => _import(context, ref))),
@@ -128,7 +136,7 @@ class _Btn extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52), padding: const EdgeInsets.symmetric(horizontal: 6), backgroundColor: Colors.white),
+        style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52), padding: const EdgeInsets.symmetric(horizontal: 6), backgroundColor: AppColors.bg),
         onPressed: onTap,
         icon: Icon(icon, size: 20, color: AppColors.green),
         label: Text(label, style: const TextStyle(fontSize: 13)),

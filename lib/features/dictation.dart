@@ -68,7 +68,7 @@ class _DictationState extends State<_Dictation> {
               width: 90,
               height: 90,
               decoration: BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
-              child: const Icon(Icons.mic, color: Colors.white, size: 44),
+              child: Icon(Icons.mic, color: AppColors.onAccent, size: 44),
             ),
           ),
           const SizedBox(height: 14),
