@@ -115,8 +115,8 @@ final List<Food> seedFoods = [
   _g('Ciecierzyca gotowana', 164, 9, 27, 2.6, 150),
   _g('Proteinowy shake', 380, 75, 8, 6, 30, '1 miarka'),
   // Fast food & chains (approximate menu figures)
-  _chain("McDonald's", 'Big Mac', 215, 503, 26, 41, 26),
-  _chain("McDonald's", 'McChicken', 190, 400, 15, 40, 20),
+  _chain("McDonald's", 'Big Mac', 215, 544, 26, 45, 30),
+  _chain("McDonald's", 'McChicken', 190, 433, 21, 48, 17),
   _chain("McDonald's", 'Cheeseburger', 118, 300, 15, 33, 12),
   _chain("McDonald's", 'Hamburger', 105, 250, 13, 31, 9),
   _chain("McDonald's", 'McRoyal', 200, 510, 28, 36, 28),
