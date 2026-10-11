@@ -9,13 +9,15 @@ import '../domain/meal_resolver.dart';
 import '../domain/models.dart';
 import '../domain/shopping_parser.dart';
 import '../providers.dart';
+import 'api_provider_screen.dart';
 import 'common.dart';
 
 Future<void> showVoiceSheet(BuildContext context) => showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.bg,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      barrierColor: const Color(0xFF17201C).withValues(alpha: 0.5),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
       builder: (_) => const _VoiceSheet(),
     );
 
@@ -160,11 +162,11 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
   @override
   Widget build(BuildContext context) {
     final inset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + inset),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(9))),
-        const SizedBox(height: 16),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + inset + bottomSafe),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.outline, borderRadius: BorderRadius.circular(2)))),
         ...switch (_phase) {
           _Phase.listening => _listening(),
           _Phase.working => _working(),
@@ -176,36 +178,67 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
   }
 
   List<Widget> _listening() => [
-        GestureDetector(
-          onTap: _stopAndSubmit,
-          child: Container(
-            width: 110,
-            height: 110,
-            decoration: BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
-            child: Icon(Icons.mic, color: AppColors.onAccent, size: 54),
+        const SizedBox(height: 24),
+        Center(child: Text('Słucham…', style: fig(16, weight: 600, color: AppColors.accent))),
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 116),
+          child: Center(
+            child: Text(_heard.isEmpty ? 'Powiedz, co zjadłeś' : _heard,
+                textAlign: TextAlign.center,
+                style: display(30, weight: 700, height: 38 / 30, color: _heard.isEmpty ? AppColors.text2 : AppColors.text)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Center(
+          child: SizedBox(
+            width: 144,
+            height: 144,
+            child: Stack(alignment: Alignment.center, children: [
+              Container(decoration: BoxDecoration(color: AppColors.hero, shape: BoxShape.circle)),
+              Positioned.fill(
+                  child: Padding(padding: const EdgeInsets.all(18), child: Container(decoration: BoxDecoration(color: AppColors.track, shape: BoxShape.circle)))),
+              Semantics(
+                button: true,
+                label: 'Skończyłem mówić',
+                child: GestureDetector(
+                  onTap: _stopAndSubmit,
+                  child: Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                    child: Icon(Icons.mic, color: AppColors.onAccent, size: 40),
+                  ),
+                ),
+              ),
+            ]),
           ),
         ),
         const SizedBox(height: 16),
-        Text(_heard.isEmpty ? 'Słucham… powiedz, co zjadłeś' : _heard,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.w600, color: _heard.isEmpty ? AppColors.muted : AppColors.ink)),
-        if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: TextStyle(color: AppColors.amber))),
-        const SizedBox(height: 8),
-        Text('Dotknij mikrofon, gdy skończysz', style: TextStyle(color: AppColors.muted)),
-        TextButton(onPressed: () { _stt.cancel(); setState(() => _phase = _Phase.typing); }, child: const Text('Wolę wpisać')),
+        Center(child: Text(_error ?? 'Dotknij mikrofon, gdy skończysz', style: fig(15, color: _error == null ? AppColors.text3 : AppColors.warn))),
+        const SizedBox(height: 16),
+        Center(
+          child: TextButton.icon(
+            onPressed: () { _stt.cancel(); setState(() => _phase = _Phase.typing); },
+            icon: const Icon(Icons.keyboard_outlined),
+            label: const Text('Wolę wpisać'),
+          ),
+        ),
       ];
 
   List<Widget> _working() => [
-        const SizedBox(height: 24),
-        const CircularProgressIndicator(),
-        const SizedBox(height: 16),
-        Text('Liczę: „$_heard”', textAlign: TextAlign.center),
-        const SizedBox(height: 24),
+        const SizedBox(height: 40),
+        const Center(child: CircularProgressIndicator()),
+        const SizedBox(height: 20),
+        Center(child: Text('Liczę: „$_heard”', textAlign: TextAlign.center, style: fig(16, color: AppColors.text3))),
+        const SizedBox(height: 40),
       ];
 
   List<Widget> _typing() => [
-        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: TextStyle(color: AppColors.amber))),
+        const SizedBox(height: 20),
+        Text('Co zjadłeś?', style: display(26)),
+        const SizedBox(height: 12),
+        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: fig(14, weight: 600, color: AppColors.warn))),
         TextField(
           controller: _text,
           autofocus: true,
@@ -215,76 +248,108 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
           decoration: const InputDecoration(hintText: '2 jajka, kanapka z serem, kawa z mlekiem'),
           onSubmitted: (v) { if (v.trim().isNotEmpty) { _heard = v; _submit(v); } },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         FilledButton(
             onPressed: () { final v = _text.text.trim(); if (v.isNotEmpty) { _heard = v; _submit(v); } },
             child: const Text('Dodaj')),
-        TextButton(onPressed: _start, child: const Text('Użyj mikrofonu')),
+        Center(child: TextButton.icon(onPressed: _start, icon: const Icon(Icons.mic_none), label: const Text('Użyj mikrofonu'))),
       ];
+
+  Widget _resultRow(Entry e, {required bool last}) {
+    final unknown = e.macros.kcal == 0;
+    return InkWell(
+      onTap: unknown ? () => _estimateEntry(e) : null,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 60),
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.line), bottom: last ? BorderSide(color: AppColors.line) : BorderSide.none)),
+        child: Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(e.name, style: fig(16, weight: 600)),
+              Text(unknown ? 'Brak wartości, dotknij, żeby oszacować AI' : '${n0(e.grams)} g · ${macroText(e.macros)}',
+                  style: fig(14, color: unknown ? AppColors.warn : AppColors.text2)),
+            ]),
+          ),
+          if (unknown)
+            TextButton(onPressed: () => _estimateEntry(e), child: const Text('Oszacuj AI'))
+          else
+            Text('${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: fig(18, weight: 600)),
+        ]),
+      ),
+    );
+  }
 
   List<Widget> _done() {
     final shopped = _shopped;
     if (shopped != null) {
       return [
+        const SizedBox(height: 20),
         Row(children: [
-          Icon(Icons.shopping_cart, color: AppColors.green, size: 28),
-          const SizedBox(width: 8),
-          Expanded(child: Text(shopped.isEmpty ? 'Nie usłyszałem, co kupić' : 'Dodano do zakupów (${shopped.length})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
+          Icon(Icons.shopping_cart_outlined, color: AppColors.accent, size: 28),
+          const SizedBox(width: 10),
+          Expanded(child: Text(shopped.isEmpty ? 'Nie usłyszałem, co kupić' : 'Dodano do zakupów (${shopped.length})', style: display(26))),
         ]),
-        const SizedBox(height: 8),
-        Wrap(spacing: 8, runSpacing: 4, children: [for (final x in shopped) Chip(label: Text(x))]),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(child: OutlinedButton(onPressed: () { _shopped = null; _start(); }, child: const Text('Dodaj jeszcze'))),
-          const SizedBox(width: 8),
-          Expanded(child: FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Gotowe'))),
-        ]),
+        for (var i = 0; i < shopped.length; i++)
+          Container(
+            height: 52,
+            alignment: Alignment.centerLeft,
+            decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.line), bottom: i == shopped.length - 1 ? BorderSide(color: AppColors.line) : BorderSide.none)),
+            child: Text(shopped[i], style: fig(16, weight: 600)),
+          ),
+        const SizedBox(height: 20),
+        FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Gotowe')),
+        Center(child: TextButton(onPressed: () { _shopped = null; _start(); }, child: const Text('Dodaj jeszcze'))),
       ];
     }
     final total = _saved.fold(Macros.zero, (a, e) => a + e.macros);
-    final unknown = _saved.where((e) => e.macros.kcal == 0).toList();
+    final meal = _saved.isEmpty ? null : const ['śniadania', 'obiadu', 'kolacji', 'przekąsek'][_saved.first.meal];
     return [
-      Row(children: [
-        Icon(Icons.check_circle, color: AppColors.green, size: 28),
-        const SizedBox(width: 8),
-        Expanded(child: Text(_saved.isEmpty ? 'Nic nie rozpoznałem' : 'Dodano ${_saved.length} poz. · ${n0(total.kcal)} kcal',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
-      ]),
-      const SizedBox(height: 8),
+      const SizedBox(height: 20),
+      if (_saved.isEmpty)
+        Text('Nic nie rozpoznałem', style: display(26))
+      else
+        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+          Text(n0(total.kcal), style: display(56)),
+          const SizedBox(width: 10),
+          Flexible(child: Text('kcal dodane do $meal', style: fig(17, weight: 600))),
+        ]),
+      const SizedBox(height: 12),
       ConstrainedBox(
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-        child: ListView(shrinkWrap: true, children: [
-          for (final e in _saved)
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              title: Text(e.name),
-              subtitle: Text('${n0(e.grams)} g · ${macroText(e.macros)}'),
-              trailing: e.macros.kcal == 0
-                  ? TextButton(onPressed: () => _estimateEntry(e), child: const Text('Oszacuj AI'))
-                  : Text('${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: figure(size: 15)),
-            ),
+        child: ListView(shrinkWrap: true, padding: EdgeInsets.zero, children: [
+          for (var i = 0; i < _saved.length; i++) _resultRow(_saved[i], last: i == _saved.length - 1),
         ]),
       ),
-      if (unknown.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text('Brak wartości dla: ${unknown.map((e) => e.name).join(', ')}. Dotknij „Oszacuj AI” przy pozycji.',
-              style: TextStyle(color: AppColors.amberInk, fontSize: 13)),
-        ),
-      if (!_usedAi)
-        Padding(
-          padding: EdgeInsets.only(top: 6),
-          child: Text('Tryb prosty (bez AI) słabo rozumie całe zdania. Podłącz AI w Ja → Dostawca API (np. DeepSeek), a zadziała jak trzeba.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12)),
-        ),
       const SizedBox(height: 12),
-      Row(children: [
-        Expanded(child: OutlinedButton(onPressed: _undo, child: const Text('Cofnij'))),
+      Text.rich(TextSpan(style: fig(14, color: AppColors.text3, height: 20 / 14), children: [
+        const TextSpan(text: 'Dotknij pozycję, żeby zmienić gramy.'),
+        if (!_usedAi) ...[
+          const TextSpan(text: ' Bez AI zdania rozumiem słabo. '),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ApiProviderScreen()));
+              },
+              child: Text('Podłącz AI', style: fig(14, weight: 600, color: AppColors.warn)),
+            ),
+          ),
+        ],
+      ])),
+      const SizedBox(height: 20),
+      FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Gotowe')),
+      const SizedBox(height: 4),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        TextButton(onPressed: _start, child: const Text('Dodaj jeszcze')),
         const SizedBox(width: 8),
-        Expanded(child: OutlinedButton(onPressed: () { _start(); }, child: const Text('Dodaj jeszcze'))),
-        const SizedBox(width: 8),
-        Expanded(child: FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Gotowe'))),
+        TextButton.icon(
+          style: TextButton.styleFrom(foregroundColor: AppColors.text3),
+          onPressed: _undo,
+          icon: const Icon(Icons.undo, size: 18),
+          label: const Text('Cofnij wszystko'),
+        ),
       ]),
     ];
   }

@@ -23,7 +23,13 @@ class _ShellState extends State<Shell> {
   static const _micSize = 70.0;
   static const _micRise = 28.0;
 
-  static const _pages = <Widget>[TodayScreen(), RecipesScreen(), AdviceScreen(), SettingsScreen()];
+  // Dziś draws its own hero under the status bar; the other tabs sit in a SafeArea.
+  static const _pages = <Widget>[
+    TodayScreen(),
+    SafeArea(bottom: false, child: RecipesScreen()),
+    SafeArea(bottom: false, child: AdviceScreen()),
+    SafeArea(bottom: false, child: SettingsScreen()),
+  ];
 
   Widget _tab(int i, IconData icon, String label) {
     final sel = _i == i;
@@ -59,7 +65,7 @@ class _ShellState extends State<Shell> {
       backgroundColor: AppColors.bg,
       body: Stack(children: [
         Column(children: [
-          Expanded(child: SafeArea(bottom: false, child: IndexedStack(index: _i, children: _pages))),
+          Expanded(child: IndexedStack(index: _i, children: _pages)),
           Container(
             height: navTotal,
             padding: EdgeInsets.fromLTRB(8, 0, 8, inset),
