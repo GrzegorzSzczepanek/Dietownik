@@ -4,6 +4,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../core/theme.dart';
 import '../domain/models.dart';
+import '../domain/shopping_parser.dart';
 import '../providers.dart';
 import 'common.dart';
 
@@ -31,6 +32,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
   String? _error;
   List<Entry> _saved = [];
   bool _usedAi = true;
+  List<String>? _shopped;
 
   @override
   void initState() {
@@ -92,6 +94,16 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
 
   Future<void> _submit(String text) async {
     if (_phase == _Phase.working || _phase == _Phase.done) return;
+    final shop = parseShoppingCommand(text);
+    if (shop != null) {
+      if (shop.isNotEmpty) await ref.read(shoppingProvider.notifier).add([for (final x in shop) '0|$x']);
+      if (!mounted) return;
+      setState(() {
+        _shopped = shop;
+        _phase = _Phase.done;
+      });
+      return;
+    }
     setState(() => _phase = _Phase.working);
     try {
       final r = await ref
@@ -188,6 +200,24 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
       ];
 
   List<Widget> _done() {
+    final shopped = _shopped;
+    if (shopped != null) {
+      return [
+        Row(children: [
+          const Icon(Icons.shopping_cart, color: AppColors.green, size: 28),
+          const SizedBox(width: 8),
+          Expanded(child: Text(shopped.isEmpty ? 'Nie usłyszałem, co kupić' : 'Dodano do zakupów (${shopped.length})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
+        ]),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 4, children: [for (final x in shopped) Chip(label: Text(x))]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: OutlinedButton(onPressed: () { _shopped = null; _start(); }, child: const Text('Dodaj jeszcze'))),
+          const SizedBox(width: 8),
+          Expanded(child: FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Gotowe'))),
+        ]),
+      ];
+    }
     final total = _saved.fold(Macros.zero, (a, e) => a + e.macros);
     final unknown = _saved.where((e) => e.macros.kcal == 0).toList();
     return [

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/theme.dart';
+
+import '../domain/shopping_parser.dart';
 import '../providers.dart';
+import 'common.dart';
+import 'dictation.dart';
 
 class ShoppingScreen extends ConsumerStatefulWidget {
   const ShoppingScreen({super.key});
@@ -27,7 +32,13 @@ class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
         TextField(
           controller: _input,
           textInputAction: TextInputAction.done,
-          decoration: InputDecoration(hintText: 'Dodaj do listy…', suffixIcon: IconButton(icon: const Icon(Icons.add), onPressed: _add)),
+          decoration: InputDecoration(
+            hintText: 'np. jajka, ser, masło',
+            suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
+              IconButton(icon: const Icon(Icons.mic, color: AppColors.green), onPressed: _dictate),
+              IconButton(icon: const Icon(Icons.add), onPressed: _add),
+            ]),
+          ),
           onSubmitted: (_) => _add(),
         ),
         if (items.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Text('Pusto. Dodaj brakujące składniki z przepisu albo z „Co mam w lodówce”.', textAlign: TextAlign.center)),
@@ -43,7 +54,20 @@ class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
   }
 
   void _add() {
-    ref.read(shoppingProvider.notifier).add([for (final x in _input.text.split(RegExp(r'[,;\n]'))) if (x.trim().isNotEmpty) '0|${x.trim()}']);
+    final text = _input.text;
+    _addText(text);
     _input.clear();
+  }
+
+  void _addText(String text) {
+    final items = parseShoppingCommand(text) ?? splitShoppingItems(text);
+    if (items.isEmpty) return;
+    ref.read(shoppingProvider.notifier).add([for (final x in items) '0|$x']);
+    toast(context, 'Dodano: ${items.join(', ')}');
+  }
+
+  Future<void> _dictate() async {
+    final t = await showDictation(context, hint: 'Powiedz np. „jajka, ser, masło”');
+    if (t != null && mounted) _addText(t);
   }
 }

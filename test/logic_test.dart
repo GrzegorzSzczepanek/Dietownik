@@ -11,7 +11,10 @@ import 'package:dietownik/data/generic_foods.dart';
 
 import 'package:dietownik/services/recipe_search.dart';
 
+import 'package:dietownik/domain/shopping_parser.dart';
+
 void main() {
+  shoppingTests();
   matchTests();
   genericTests();
   csvTests();
@@ -87,5 +90,13 @@ void matchTests() {
     final m = matchRecipe(r, ['jajek', 'ser', 'pomidor']);
     expect(m.missing.length, 1); // masło
     expect(m.score, closeTo(0.8, 0.01)); // 4 of 5 (sól is a staple, optional skipped)
+  });
+}
+
+void shoppingTests() {
+  test('shopping command is detected and split', () {
+    expect(parseShoppingCommand('zakupy jajka, ser, masło i mleko'), ['Jajka', 'Ser', 'Masło', 'Mleko']);
+    expect(parseShoppingCommand('Dodaj do zakupów: chleb'), ['Chleb']);
+    expect(parseShoppingCommand('dwa jajka i kawa'), isNull);
   });
 }
