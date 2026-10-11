@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../ai/ai_settings.dart';
 import '../ai/embeddings.dart';
@@ -25,6 +26,8 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
   late ApiConfig cfg = ref.read(aiSettingsProvider).api;
   late final _url = TextEditingController(text: cfg.baseUrl);
   late final _model = TextEditingController(text: cfg.model);
+  late final _vision = TextEditingController(text: cfg.visionModel);
+  final _brave = TextEditingController();
   late final _embModel = TextEditingController(text: cfg.embeddingModel);
   final _key = TextEditingController();
   bool _hasKey = false;
@@ -34,6 +37,14 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
   @override
   void initState() {
     super.initState();
+    if (cfg.model.isEmpty) {
+      final p = cfg.preset;
+      _model.text = p.model;
+      _vision.text = p.visionModel;
+    }
+    const FlutterSecureStorage().read(key: 'brave_key').then((k) {
+      if (mounted && k != null) _brave.text = k;
+    }).catchError((_) {});
     ref.read(aiSettingsProvider.notifier).readKey().then((k) {
       if (mounted) setState(() => _hasKey = k != null && k.isNotEmpty);
     }).catchError((_) {}); // keystore unavailable: treat as no saved key
@@ -42,14 +53,23 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
   void _pick(ApiPreset p) => setState(() {
         cfg = cfg.copyWith(presetId: p.id, format: p.format, baseUrl: p.baseUrl);
         _url.text = p.baseUrl;
+        _model.text = p.model;
+        _vision.text = p.visionModel;
+        cfg = cfg.copyWith(model: p.model, visionModel: p.visionModel);
         _result = null;
       });
 
   Future<void> _persist() async {
     final ctrl = ref.read(aiSettingsProvider.notifier);
     cfg = cfg.copyWith(
-        baseUrl: _url.text.trim(), model: _model.text.trim(), embeddingModel: _embModel.text.trim());
+        baseUrl: _url.text.trim(), model: _model.text.trim(), visionModel: _vision.text.trim(), embeddingModel: _embModel.text.trim());
     await ctrl.setApi(cfg);
+    final b = _brave.text.trim();
+    if (b.isEmpty) {
+      await const FlutterSecureStorage().delete(key: 'brave_key');
+    } else {
+      await const FlutterSecureStorage().write(key: 'brave_key', value: b);
+    }
     if (_key.text.isNotEmpty) {
       await ctrl.writeKey(_key.text.trim());
       _key.clear();
@@ -152,6 +172,14 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
                 showCheckmark: false,
               ),
           ]),
+          if (cfg.preset.note.isNotEmpty || cfg.preset.keyUrl.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                [if (cfg.preset.note.isNotEmpty) cfg.preset.note, if (cfg.preset.keyUrl.isNotEmpty) 'Klucz: ${cfg.preset.keyUrl}'].join('\n'),
+                style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w600, height: 1.4),
+              ),
+            ),
           const SizedBox(height: 18),
           DropdownButtonFormField<ApiFormat>(
             initialValue: cfg.format,
@@ -190,6 +218,24 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
                 labelText: 'Model',
                 hintText: str.isEnglish ? 'vision-capable model name' : 'nazwa modelu z obsługą obrazu',
               )),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _vision,
+            decoration: const InputDecoration(
+              labelText: 'Model do obrazu (opcjonalnie)',
+              helperText: 'Używany tylko przy zdjęciach etykiet. Puste = ten sam model.',
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _brave,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Brave Search — klucz (wyszukiwanie w sieci)',
+              helperText: 'Opcjonalnie, darmowy: brave.com/search/api. Używany do brakujących produktów i przepisów.',
+              helperMaxLines: 2,
+            ),
+          ),
           if (cfg.format == ApiFormat.openai) ...[
             const SizedBox(height: 14),
             TextField(

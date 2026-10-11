@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../domain/models.dart';
+import '../services/web_search.dart';
 import 'ai_settings.dart';
 import 'llm_api.dart';
 import 'local_runtime.dart';
@@ -16,8 +17,9 @@ class ParsedItem {
 }
 
 class EstimatedFood {
-  const EstimatedFood(this.name, this.kcal100, this.p100, this.c100, this.f100, this.servingG);
+  const EstimatedFood(this.name, this.kcal100, this.p100, this.c100, this.f100, this.servingG, {this.sourceUrl});
   final String name;
+  final String? sourceUrl;
   final double kcal100, p100, c100, f100, servingG;
 }
 
@@ -25,7 +27,8 @@ class EstimatedFood {
 /// depending on the per-task engine setting. Returns null when no engine is
 /// usable so callers can fall back to dumb parsing.
 class DietAi {
-  DietAi({required this.settings, required this.llm, required this.local, this.onTokens});
+  DietAi({required this.settings, required this.llm, required this.local, this.onTokens, this.braveKey});
+  final String? braveKey;
   final AiSettings settings;
   final LlmApi? llm;
   final LocalRuntime local;
@@ -81,7 +84,33 @@ Jesteś dietetykiem. Podaj typowe wartości odżywcze na 100 g (lub 100 ml) dla 
 Zwróć WYŁĄCZNIE JSON: {"kcal100":n,"p100":n,"c100":n,"f100":n,"serving_g":typowa_porcja_w_gramach}
 p = białko, c = węglowodany, f = tłuszcz, w gramach. Bez komentarzy.''';
 
+  static const _webPrompt = '''
+Na podstawie WYŁĄCZNIE poniższych wyników wyszukiwania podaj wartości odżywcze na 100 g (lub 100 ml) dla produktu.
+Używaj tylko liczb, które faktycznie występują w wynikach. Jeśli podano wartości na porcję, przelicz je na 100 g.
+Jeśli wyniki nie zawierają wiarygodnych wartości dla tego produktu, zwróć {"found":false}.
+Zwróć WYŁĄCZNIE JSON: {"found":true,"kcal100":n,"p100":n,"c100":n,"f100":n,"serving_g":porcja_lub_100,"source_url":"url z wyników"}''';
+
+  /// Looks the product up on the web and lets the model read the snippets.
+  /// Null when there is no key, no usable result or the model finds no numbers.
+  Future<EstimatedFood?> estimateFromWeb(String name) async {
+    final hits = await braveSearch('$name kalorie wartości odżywcze na 100 g', braveKey);
+    if (hits.isEmpty) return null;
+    final ctx = [for (final h in hits.take(6)) '${h.title}\n${h.url}\n${h.snippet}'].join('\n---\n');
+    try {
+      final j = extractJson(await _run(AiTask.estimation, _webPrompt, 'Produkt: $name\n\nWyniki:\n$ctx', json: true)) as Map;
+      if (j['found'] == false) return null;
+      final kcal = _d(j['kcal100']);
+      if (kcal == null) return null;
+      return EstimatedFood(name, kcal, _d(j['p100']) ?? 0, _d(j['c100']) ?? 0, _d(j['f100']) ?? 0, _d(j['serving_g']) ?? 100,
+          sourceUrl: '${j['source_url'] ?? ''}');
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<EstimatedFood> estimate(String name) async {
+    final web = await estimateFromWeb(name);
+    if (web != null) return web;
     final j = extractJson(await _run(AiTask.estimation, _estPrompt, name, json: true)) as Map;
     final kcal = _d(j['kcal100']);
     if (kcal == null) throw const FormatException('brak kcal');

@@ -93,7 +93,7 @@ class OpenAiCompatibleApi implements LlmApi {
             if (key != null && key!.isNotEmpty) 'Authorization': 'Bearer $key',
           }),
           data: {
-            'model': cfg.model,
+            'model': (image != null && cfg.visionModel.isNotEmpty) ? cfg.visionModel : cfg.model,
             'temperature': 0,
             'max_tokens': maxTokens,
             'messages': [
@@ -150,7 +150,7 @@ class AnthropicApi implements LlmApi {
           'anthropic-version': '2023-06-01',
         }),
         data: {
-          'model': cfg.model,
+          'model': (image != null && cfg.visionModel.isNotEmpty) ? cfg.visionModel : cfg.model,
           'max_tokens': maxTokens,
           'temperature': 0,
           'system': system,

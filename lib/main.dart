@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,10 +19,11 @@ Future<void> main() async {
   await initializeDateFormatting("pl");
   final db = await AppDb.open();
   await seedFoodsOnce(db);
-  await loadOffPackOnce(db);
   final settings = await AiSettingsStore().load();
   final engineReady = await initEdgeAi();
   final goals = await GoalsNotifier.load();
+  // The big product pack loads in the background so first launch stays fast.
+  unawaited(loadOffPackOnce(db));
   runApp(ProviderScope(
     overrides: [
       dbProvider.overrideWithValue(db),

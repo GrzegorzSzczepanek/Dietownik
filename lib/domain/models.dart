@@ -50,7 +50,7 @@ class Food {
       Macros(kcal: kcal100, p: p100, c: c100, f: f100) * (grams / 100);
 
   String get title => brand.isEmpty ? name : '$name · $brand';
-  bool get estimated => source == 'ai' || source == 'chain';
+  bool get estimated => source == 'ai' || source == 'chain' || source == 'web';
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,

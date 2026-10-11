@@ -84,6 +84,7 @@ class AiSettingsController extends Notifier<AiSettings> {
         llm: await llm(),
         local: ref.read(localRuntimeProvider),
         onTokens: addTokens,
+        braveKey: await const FlutterSecureStorage().read(key: 'brave_key').catchError((_) => null),
       );
 
   Future<Embedder?> embedder() async {

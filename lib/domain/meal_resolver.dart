@@ -81,7 +81,8 @@ class MealResolver {
             c100: e.c100,
             f100: e.f100,
             servingG: e.servingG,
-            source: 'ai');
+            ingredients: (e.sourceUrl ?? '').isEmpty ? '' : 'Źródło: ${e.sourceUrl}',
+            source: (e.sourceUrl ?? '').isEmpty ? 'ai' : 'web');
         final id = await db.saveFood(f);
         food = Food.fromMap({...f.toMap(), 'id': id});
         estimated = true;

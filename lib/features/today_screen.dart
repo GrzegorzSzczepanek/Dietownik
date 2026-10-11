@@ -7,7 +7,9 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../domain/models.dart';
 import '../providers.dart';
+import '../ai/local_models.dart';
 import 'advice_screen.dart';
+import 'api_provider_screen.dart';
 import 'common.dart';
 import 'food_search_screen.dart';
 import 'scan_screen.dart';
@@ -47,6 +49,7 @@ class TodayScreen extends ConsumerWidget {
               icon: const Icon(Icons.chevron_right)),
         ]),
         const SizedBox(height: 8),
+        const _AiBanner(),
         _SummaryCard(total: total, goals: goals),
         const _WeeklyLine(),
         const SizedBox(height: 10),
@@ -80,6 +83,40 @@ class TodayScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         const _WeekStrip(),
       ],
+    );
+  }
+}
+
+/// Nudges once: without an AI engine voice input only understands simple lists.
+class _AiBanner extends ConsumerWidget {
+  const _AiBanner();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final api = ref.watch(aiSettingsProvider).api;
+    final local = ref.watch(activeModelsProvider);
+    if (api.model.isNotEmpty && api.baseUrl.isNotEmpty || local.isNotEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: AppColors.amberSoft,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApiProviderScreen())),
+          child: const Padding(
+            padding: EdgeInsets.all(14),
+            child: Row(children: [
+              Icon(Icons.auto_awesome, color: AppColors.amberInk),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text('Podłącz AI (1 minuta), żeby mikrofon rozumiał całe zdania i szukał brakujących produktów. Dotknij, wybierz dostawcę i wklej klucz.',
+                    style: TextStyle(color: AppColors.amberInk, fontWeight: FontWeight.w600)),
+              ),
+              Icon(Icons.chevron_right, color: AppColors.amberInk),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }

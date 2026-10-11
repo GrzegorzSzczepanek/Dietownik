@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/models.dart';
 import 'db.dart';
 
-const _prefKey = 'off_pack_v1';
+const _prefKey = 'off_pack_v2';
 
 /// Loads the bundled Polish product pack (Open Food Facts, ODbL) once, so
 /// common barcodes resolve offline from the first scan.
@@ -17,10 +17,11 @@ Future<void> loadOffPackOnce(AppDb db) async {
   try {
     final bytes = (await rootBundle.load('assets/off_pl.tsv.gz')).buffer.asUint8List();
     final text = utf8.decode(GZipCodec().decode(bytes));
+    final have = await db.barcodes();
     final foods = <Food>[];
     for (final line in const LineSplitter().convert(text)) {
       final c = line.split('\t');
-      if (c.length < 8) continue;
+      if (c.length < 8 || have.contains(c[0])) continue;
       final serving = double.tryParse(c[7]) ?? 0;
       foods.add(Food(
         barcode: c[0],

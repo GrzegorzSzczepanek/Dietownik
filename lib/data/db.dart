@@ -92,6 +92,8 @@ class AppDb {
         .toList();
   }
 
+  Future<Set<String>> barcodes() async => (await _db.rawQuery("SELECT barcode FROM foods WHERE barcode IS NOT NULL AND barcode != ''")).map((r) => r['barcode'] as String).toSet();
+
   Future<int> foodCount() async =>
       Sqflite.firstIntValue(await _db.rawQuery('SELECT COUNT(*) FROM foods')) ?? 0;
 

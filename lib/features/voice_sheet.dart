@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../core/theme.dart';
+import '../ai/ai_settings.dart';
+import '../ai/diet_ai.dart';
+import '../domain/meal_resolver.dart';
 import '../domain/models.dart';
 import '../domain/shopping_parser.dart';
 import '../providers.dart';
@@ -125,6 +128,26 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
     }
   }
 
+  /// Fills in an entry the lookup missed: web search + AI, else tells how to enable it.
+  Future<void> _estimateEntry(Entry e) async {
+    final ai = await ref.read(aiSettingsProvider.notifier).dietAi();
+    if (!ai.canRun(AiTask.estimation)) {
+      if (mounted) toast(context, 'Podłącz AI (Ja → Dostawca API), a policzę to za Ciebie.');
+      return;
+    }
+    final db = ref.read(dbProvider);
+    final r = await MealResolver(db: db, off: ref.read(offProvider), ai: ai)
+        .resolve(ParsedItem(e.name, grams: e.grams > 0 ? e.grams : null));
+    if (r.unknown) {
+      if (mounted) toast(context, 'Nie udało się znaleźć wartości. Dotknij wpis na ekranie Dziś i wpisz ręcznie.');
+      return;
+    }
+    final fixed = Entry(id: e.id, day: e.day, meal: e.meal, name: e.name, grams: r.grams.roundToDouble(), macros: r.macros, estimated: true);
+    await db.updateEntry(fixed);
+    ref.read(dataVersionProvider.notifier).bump();
+    if (mounted) setState(() => _saved = [for (final x in _saved) x.id == e.id ? fixed : x]);
+  }
+
   Future<void> _undo() async {
     final db = ref.read(dbProvider);
     for (final e in _saved) {
@@ -237,20 +260,22 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
               contentPadding: EdgeInsets.zero,
               title: Text(e.name),
               subtitle: Text('${n0(e.grams)} g · ${macroText(e.macros)}'),
-              trailing: Text(e.macros.kcal == 0 ? '?' : '${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: mono(size: 15)),
+              trailing: e.macros.kcal == 0
+                  ? TextButton(onPressed: () => _estimateEntry(e), child: const Text('Oszacuj AI'))
+                  : Text('${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: mono(size: 15)),
             ),
         ]),
       ),
       if (unknown.isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(top: 6),
-          child: Text('Nie znalazłem wartości dla: ${unknown.map((e) => e.name).join(', ')}. Dotknij wpis na ekranie Dziś i popraw gramy albo dodaj produkt ręcznie.',
+          child: Text('Brak wartości dla: ${unknown.map((e) => e.name).join(', ')}. Dotknij „Oszacuj AI” przy pozycji.',
               style: const TextStyle(color: AppColors.amberInk, fontSize: 13)),
         ),
       if (!_usedAi)
         const Padding(
           padding: EdgeInsets.only(top: 6),
-          child: Text('Działa tryb prosty (bez AI). Włącz model w Ja → Lokalne AI, żeby rozumiał całe zdania.',
+          child: Text('Tryb prosty (bez AI) słabo rozumie całe zdania. Podłącz AI w Ja → Dostawca API (np. DeepSeek), a zadziała jak trzeba.',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),
         ),
       const SizedBox(height: 12),

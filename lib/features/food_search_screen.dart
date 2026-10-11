@@ -22,6 +22,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   List<Food> _local = [], _web = [];
   bool _loadingWeb = false;
   String _last = '';
+  int _meal = mealForTime(DateTime.now());
 
   @override
   void initState() {
@@ -56,7 +57,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   Future<void> _pick(Food f) async {
     final g = await askGrams(context, f);
     if (g == null || !mounted) return;
-    await ref.read(foodLoggerProvider).addFood(f, g, when: ref.read(selectedDayProvider));
+    await ref.read(foodLoggerProvider).addFood(f, g, when: ref.read(selectedDayProvider), meal: _meal);
     if (mounted) { toast(context, 'Dodano: ${f.title}'); Navigator.pop(context); }
   }
 
@@ -98,8 +99,25 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
             onChanged: _run,
           ),
         ),
+        SizedBox(
+          height: 44,
+          child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16), children: [
+            for (var m = 0; m < 4; m++)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(mealNames[m]),
+                  selected: _meal == m,
+                  onSelected: (_) => setState(() => _meal = m),
+                  selectedColor: AppColors.greenSoft,
+                  showCheckmark: false,
+                ),
+              ),
+          ]),
+        ),
         Expanded(
           child: ListView(children: [
+            if (_q.text.isEmpty && _local.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 0), child: Eyebrow2('OSTATNIO UŻYWANE I POPULARNE')),
             for (final f in _local) tile(f),
             if (_loadingWeb) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
             if (_web.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 12, 16, 4), child: Eyebrow2('Z OPEN FOOD FACTS')),

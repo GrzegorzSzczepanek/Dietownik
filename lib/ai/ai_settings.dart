@@ -19,30 +19,59 @@ extension AiTaskLabel on AiTask {
 }
 
 class ApiPreset {
-  const ApiPreset(this.id, this.label, this.format, this.baseUrl, {this.needsKey = true});
+  const ApiPreset(this.id, this.label, this.format, this.baseUrl,
+      {this.needsKey = true, this.model = '', this.visionModel = '', this.keyUrl = '', this.note = ''});
   final String id;
   final String label;
   final ApiFormat format;
   final String baseUrl;
   final bool needsKey;
+
+  /// Sensible defaults so nobody has to look up model names. All editable.
+  final String model;
+
+  /// Used only when a request contains an image (label photos); empty = same as [model].
+  final String visionModel;
+  final String keyUrl;
+  final String note;
 }
 
 const apiPresets = [
-  ApiPreset('openai', 'OpenAI', ApiFormat.openai, 'https://api.openai.com/v1'),
-  ApiPreset('anthropic', 'Anthropic', ApiFormat.anthropic, 'https://api.anthropic.com'),
-  ApiPreset('gemini', 'Gemini', ApiFormat.openai,
-      'https://generativelanguage.googleapis.com/v1beta/openai'),
-  ApiPreset('openrouter', 'OpenRouter', ApiFormat.openai, 'https://openrouter.ai/api/v1'),
-  ApiPreset('ollama', 'Ollama', ApiFormat.openai, 'http://localhost:11434/v1', needsKey: false),
+  ApiPreset('deepseek', 'DeepSeek', ApiFormat.openai, 'https://api.deepseek.com',
+      model: 'deepseek-chat',
+      visionModel: 'deepseek-v4-flash-vision-exp',
+      keyUrl: 'platform.deepseek.com',
+      note: 'Najtańszy. Obraz w trybie eksperymentalnym — jeśli słabo czyta etykiety, zmień model obrazu.'),
+  ApiPreset('gemini', 'Gemini', ApiFormat.openai, 'https://generativelanguage.googleapis.com/v1beta/openai',
+      model: 'gemini-2.5-flash', keyUrl: 'aistudio.google.com/apikey', note: 'Darmowy limit, dobry obraz.'),
+  ApiPreset('openai', 'OpenAI', ApiFormat.openai, 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini', keyUrl: 'platform.openai.com/api-keys'),
+  ApiPreset('anthropic', 'Anthropic', ApiFormat.anthropic, 'https://api.anthropic.com',
+      model: 'claude-haiku-5-5', keyUrl: 'console.anthropic.com', note: 'Bardzo dobry odczyt etykiet.'),
+  ApiPreset('groq', 'Groq', ApiFormat.openai, 'https://api.groq.com/openai/v1',
+      model: 'llama-3.3-70b-versatile',
+      visionModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      keyUrl: 'console.groq.com/keys',
+      note: 'Bardzo szybki, darmowy limit.'),
+  ApiPreset('mistral', 'Mistral', ApiFormat.openai, 'https://api.mistral.ai/v1',
+      model: 'mistral-small-latest', keyUrl: 'console.mistral.ai'),
+  ApiPreset('openrouter', 'OpenRouter', ApiFormat.openai, 'https://openrouter.ai/api/v1',
+      model: 'google/gemini-2.5-flash', keyUrl: 'openrouter.ai/keys', note: 'Jeden klucz do wielu modeli.'),
+  ApiPreset('ollama', 'Ollama (LAN)', ApiFormat.openai, 'http://localhost:11434/v1',
+      needsKey: false,
+      model: 'llama3.2',
+      visionModel: 'llama3.2-vision',
+      note: 'Model na Twoim komputerze. Z telefonu podaj adres IP komputera zamiast localhost.'),
   ApiPreset('custom', 'Własny', ApiFormat.openai, ''),
 ];
 
 class ApiConfig {
   const ApiConfig({
-    this.presetId = 'openrouter',
+    this.presetId = 'deepseek',
     this.format = ApiFormat.openai,
-    this.baseUrl = 'https://openrouter.ai/api/v1',
+    this.baseUrl = 'https://api.deepseek.com',
     this.model = '',
+    this.visionModel = '',
     this.embeddingModel = '',
   });
 
@@ -50,6 +79,7 @@ class ApiConfig {
   final ApiFormat format;
   final String baseUrl;
   final String model;
+  final String visionModel;
 
   /// Optional: model name for the provider's `/embeddings` endpoint.
   final String embeddingModel;
@@ -59,12 +89,13 @@ class ApiConfig {
   String get providerLabel => preset.label;
 
   ApiConfig copyWith(
-          {String? presetId, ApiFormat? format, String? baseUrl, String? model, String? embeddingModel}) =>
+          {String? presetId, ApiFormat? format, String? baseUrl, String? model, String? visionModel, String? embeddingModel}) =>
       ApiConfig(
         presetId: presetId ?? this.presetId,
         format: format ?? this.format,
         baseUrl: baseUrl ?? this.baseUrl,
         model: model ?? this.model,
+        visionModel: visionModel ?? this.visionModel,
         embeddingModel: embeddingModel ?? this.embeddingModel,
       );
 
@@ -73,14 +104,16 @@ class ApiConfig {
         'format': format.name,
         'baseUrl': baseUrl,
         'model': model,
+        'visionModel': visionModel,
         'embeddingModel': embeddingModel,
       };
 
   factory ApiConfig.fromJson(Map<String, dynamic> j) => ApiConfig(
-        presetId: j['preset'] as String? ?? 'openrouter',
+        presetId: j['preset'] as String? ?? 'deepseek',
         format: ApiFormat.values.byName(j['format'] as String? ?? 'openai'),
         baseUrl: j['baseUrl'] as String? ?? '',
         model: j['model'] as String? ?? '',
+        visionModel: j['visionModel'] as String? ?? '',
         embeddingModel: j['embeddingModel'] as String? ?? '',
       );
 }
@@ -122,8 +155,8 @@ class AiSettings {
   /// Defaults favour privacy: everything local except chat, which has no
   /// sensible small local model yet.
   factory AiSettings.defaults() => AiSettings(engines: {
-        AiTask.foodParsing: AiEngine.local,
-        AiTask.estimation: AiEngine.local,
+        AiTask.foodParsing: AiEngine.api,
+        AiTask.estimation: AiEngine.api,
         AiTask.embeddings: AiEngine.local,
         AiTask.advice: AiEngine.api,
       });
