@@ -9,10 +9,11 @@ class AppDb {
 
   static Future<AppDb> open() async {
     final path = p.join(await getDatabasesPath(), 'dietownik.db');
-    final db = await openDatabase(path, version: 4, onUpgrade: (db, o, n) async {
+    final db = await openDatabase(path, version: 5, onUpgrade: (db, o, n) async {
       if (o < 2) await db.execute('ALTER TABLE foods ADD COLUMN ingredients TEXT');
       if (o < 3) await db.execute('CREATE TABLE IF NOT EXISTS weights(day TEXT PRIMARY KEY, kg REAL)');
       if (o < 4) await db.execute('CREATE TABLE IF NOT EXISTS water(day TEXT PRIMARY KEY, ml INTEGER)');
+      if (o < 5) await db.execute('CREATE TABLE IF NOT EXISTS chat(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, role TEXT, text TEXT, meta TEXT)');
     }, onCreate: (db, v) async {
       await db.execute('''CREATE TABLE foods(
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, brand TEXT, barcode TEXT,
@@ -20,6 +21,7 @@ class AppDb {
         source TEXT, ingredients TEXT, uses INTEGER DEFAULT 0, last_used INTEGER DEFAULT 0)''');
       await db.execute('CREATE TABLE weights(day TEXT PRIMARY KEY, kg REAL)');
       await db.execute('CREATE TABLE water(day TEXT PRIMARY KEY, ml INTEGER)');
+      await db.execute('CREATE TABLE chat(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, role TEXT, text TEXT, meta TEXT)');
       await db.execute('CREATE INDEX foods_barcode ON foods(barcode)');
       await db.execute('''CREATE TABLE entries(
         id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL, meal INTEGER, name TEXT,
@@ -139,6 +141,18 @@ class AppDb {
   }
 
   Future<void> deleteRecipe(int id) => _db.delete('recipes', where: 'id = ?', whereArgs: [id]);
+
+  // ---- chat (stays on the phone)
+  Future<List<Map<String, Object?>>> chatRows() => _db.query('chat', orderBy: 'id');
+
+  Future<int> addChat(String role, String text, String meta) => _db.insert(
+      'chat', {'ts': DateTime.now().millisecondsSinceEpoch, 'role': role, 'text': text, 'meta': meta});
+
+  Future<void> clearChat() => _db.delete('chat');
+
+  /// Entries from the last [days] days (for the chat's "history" source).
+  Future<List<Entry>> entriesSince(String fromDay) async =>
+      (await _db.query('entries', where: 'day >= ?', whereArgs: [fromDay], orderBy: 'day, ts')).map(Entry.fromMap).toList();
 
   // ---- water
   Future<int> waterFor(String day) async {

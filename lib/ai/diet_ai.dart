@@ -47,6 +47,11 @@ class DietAi {
     return local.generate(system: system, user: user, image: image, json: json);
   }
 
+  /// Raw model call for the chat (task: advice), JSON mode on.
+  Future<String> runChat(String system, String user) => _run(AiTask.advice, system, user, json: true);
+
+  bool get canChat => canRun(AiTask.advice);
+
   static dynamic extractJson(String raw) {
     var s = raw.trim();
     s = s.replaceAll(RegExp(r'^```(?:json)?', multiLine: true), '').replaceAll('```', '').trim();
