@@ -1,16 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme.dart';
 import 'features/shell.dart';
+import 'providers.dart';
 
-class DietownikApp extends StatelessWidget {
+class DietownikApp extends ConsumerStatefulWidget {
   const DietownikApp({super.key});
+  @override
+  ConsumerState<DietownikApp> createState() => _DietownikAppState();
+}
+
+class _DietownikAppState extends ConsumerState<DietownikApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Re-plan reminders on launch; a logged meal drops that slot's nudge.
+    WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(reminderSchedulerProvider).sync());
+  }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        title: 'Dietownik',
-        debugShowCheckedModeBanner: false,
-        theme: buildTheme(),
-        home: const Shell(),
-      );
+  Widget build(BuildContext context) {
+    ref.listen(dataVersionProvider, (_, _) => ref.read(reminderSchedulerProvider).sync());
+    return MaterialApp(
+      title: 'Dietownik',
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(),
+      home: const Shell(),
+    );
+  }
 }

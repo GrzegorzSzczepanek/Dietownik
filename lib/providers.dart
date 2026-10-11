@@ -14,6 +14,7 @@ import 'data/db.dart';
 import 'domain/fallback_parser.dart';
 import 'domain/meal_resolver.dart';
 import 'domain/models.dart';
+import 'notifications/reminders.dart';
 import 'services/off_client.dart';
 
 final dbProvider = Provider<AppDb>((ref) => throw UnimplementedError('override in main'));
@@ -269,3 +270,24 @@ class FoodLogger {
 }
 
 final foodLoggerProvider = Provider<FoodLogger>((ref) => FoodLogger(ref));
+
+final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) => ReminderScheduler(ref.read(dbProvider)));
+
+class RemindersNotifier extends AsyncNotifier<ReminderPrefs> {
+  @override
+  Future<ReminderPrefs> build() => ReminderPrefs.load();
+
+  Future<bool> set(ReminderPrefs p) async {
+    final sched = ref.read(reminderSchedulerProvider);
+    var prefs = p;
+    if (p.enabled && !(state.value?.enabled ?? false)) {
+      if (!await sched.requestPermission()) prefs = p.copyWith(enabled: false);
+    }
+    await prefs.save();
+    state = AsyncData(prefs);
+    await sched.sync();
+    return prefs.enabled == p.enabled;
+  }
+}
+
+final remindersProvider = AsyncNotifierProvider<RemindersNotifier, ReminderPrefs>(RemindersNotifier.new);

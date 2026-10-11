@@ -1,14 +1,19 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../ai/ai_settings.dart';
 import '../core/theme.dart';
 import '../domain/csv_import.dart';
 import '../domain/models.dart';
+import '../notifications/reminders.dart';
 import '../providers.dart';
+import 'weight_screen.dart';
 import 'api_provider_screen.dart';
 import 'common.dart';
 import 'local_models_screen.dart';
@@ -37,6 +42,18 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsScreen())),
           ),
         ),
+        const SizedBox(height: 8),
+        SectionCard(
+          padding: EdgeInsets.zero,
+          child: ListTile(
+            leading: const Icon(Icons.monitor_weight_outlined, color: AppColors.green),
+            title: const Text('Waga i trend'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeightScreen())),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const _RemindersCard(),
         const SizedBox(height: 16),
         const Eyebrow('AI — CO GDZIE DZIAŁA'),
         const SizedBox(height: 8),
@@ -88,10 +105,115 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _importCsv(context, ref),
           ),
         ),
+        const SizedBox(height: 8),
+        SectionCard(
+          padding: EdgeInsets.zero,
+          child: Column(children: [
+            ListTile(
+              leading: const Icon(Icons.ios_share, color: AppColors.green),
+              title: const Text('Zrób kopię zapasową'),
+              subtitle: const Text('Plik JSON z wpisami, przepisami, wagą i produktami'),
+              onTap: () => _backup(context, ref),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.restore, color: AppColors.green),
+              title: const Text('Przywróć z kopii'),
+              subtitle: const Text('Zastąpi wpisy, przepisy i wagę'),
+              onTap: () => _restore(context, ref),
+            ),
+          ]),
+        ),
         const SizedBox(height: 16),
         const Text('Dietownik 1.0 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
             style: TextStyle(color: AppColors.muted, fontSize: 12)),
       ],
+    );
+  }
+}
+
+Future<void> _backup(BuildContext context, WidgetRef ref) async {
+  try {
+    final data = await ref.read(dbProvider).exportAll();
+    final g = ref.read(goalsProvider);
+    data['goals'] = {'kcal': g.kcal, 'p': g.p, 'c': g.c, 'f': g.f};
+    final dir = await getTemporaryDirectory();
+    final f = File('${dir.path}/dietownik-${dayKey(DateTime.now())}.json');
+    await f.writeAsString(jsonEncode(data));
+    await SharePlus.instance.share(ShareParams(files: [XFile(f.path)], text: 'Kopia Dietownika'));
+  } catch (e) {
+    if (context.mounted) toast(context, 'Nie udało się zrobić kopii: $e');
+  }
+}
+
+Future<void> _restore(BuildContext context, WidgetRef ref) async {
+  final pick = await FilePicker.pickFiles(type: FileType.any);
+  final path = pick.isEmpty ? null : pick.first.path;
+  if (path == null || !context.mounted) return;
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Przywrócić kopię?'),
+      content: const Text('Obecne wpisy, przepisy i waga zostaną zastąpione danymi z pliku.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Anuluj')),
+        FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(120, 44)), onPressed: () => Navigator.pop(ctx, true), child: const Text('Przywróć')),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  try {
+    final data = jsonDecode(await File(path).readAsString()) as Map<String, dynamic>;
+    await ref.read(dbProvider).importAll(data);
+    final g = data['goals'];
+    if (g is Map) {
+      await ref.read(goalsProvider.notifier).set(Goals(
+          kcal: (g['kcal'] as num).toDouble(), p: (g['p'] as num).toDouble(), c: (g['c'] as num).toDouble(), f: (g['f'] as num).toDouble()));
+    }
+    ref.read(dataVersionProvider.notifier).bump();
+    if (context.mounted) toast(context, 'Przywrócono kopię.');
+  } catch (e) {
+    if (context.mounted) toast(context, 'Nie udało się przywrócić: $e');
+  }
+}
+
+class _RemindersCard extends ConsumerWidget {
+  const _RemindersCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(remindersProvider).value ?? const ReminderPrefs();
+    final ctrl = ref.read(remindersProvider.notifier);
+    const names = ['Śniadanie', 'Obiad', 'Kolacja'];
+    String fmt(int m) => '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}';
+    return SectionCard(
+      padding: EdgeInsets.zero,
+      child: Column(children: [
+        SwitchListTile(
+          secondary: const Icon(Icons.notifications_outlined, color: AppColors.green),
+          title: const Text('Przypomnienia o posiłkach'),
+          subtitle: const Text('Tylko gdy posiłku jeszcze nie zapisałeś'),
+          value: prefs.enabled,
+          onChanged: (v) async {
+            final ok = await ctrl.set(prefs.copyWith(enabled: v));
+            if (!ok && context.mounted) toast(context, 'Brak zgody na powiadomienia. Włącz ją w ustawieniach telefonu.');
+          },
+        ),
+        if (prefs.enabled)
+          for (var i = 0; i < 3; i++)
+            ListTile(
+              dense: true,
+              title: Text(names[i]),
+              trailing: Text(fmt(prefs.slots[i]), style: mono(size: 16)),
+              onTap: () async {
+                final t = await showTimePicker(
+                    context: context, initialTime: TimeOfDay(hour: prefs.slots[i] ~/ 60, minute: prefs.slots[i] % 60));
+                if (t == null) return;
+                final slots = [...prefs.slots]..[i] = t.hour * 60 + t.minute;
+                await ctrl.set(prefs.copyWith(slots: slots));
+              },
+            ),
+      ]),
     );
   }
 }

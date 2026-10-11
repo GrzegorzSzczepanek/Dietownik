@@ -9,13 +9,15 @@ class AppDb {
 
   static Future<AppDb> open() async {
     final path = p.join(await getDatabasesPath(), 'dietownik.db');
-    final db = await openDatabase(path, version: 2, onUpgrade: (db, o, n) async {
+    final db = await openDatabase(path, version: 3, onUpgrade: (db, o, n) async {
       if (o < 2) await db.execute('ALTER TABLE foods ADD COLUMN ingredients TEXT');
+      if (o < 3) await db.execute('CREATE TABLE IF NOT EXISTS weights(day TEXT PRIMARY KEY, kg REAL)');
     }, onCreate: (db, v) async {
       await db.execute('''CREATE TABLE foods(
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, brand TEXT, barcode TEXT,
         kcal100 REAL, p100 REAL, c100 REAL, f100 REAL, serving_g REAL, serving_label TEXT,
         source TEXT, ingredients TEXT, uses INTEGER DEFAULT 0, last_used INTEGER DEFAULT 0)''');
+      await db.execute('CREATE TABLE weights(day TEXT PRIMARY KEY, kg REAL)');
       await db.execute('CREATE INDEX foods_barcode ON foods(barcode)');
       await db.execute('''CREATE TABLE entries(
         id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL, meal INTEGER, name TEXT,
@@ -121,4 +123,52 @@ class AppDb {
   }
 
   Future<void> deleteRecipe(int id) => _db.delete('recipes', where: 'id = ?', whereArgs: [id]);
+
+  // ---- weight
+  Future<void> setWeight(String day, double kg) =>
+      _db.insert('weights', {'day': day, 'kg': kg}, conflictAlgorithm: ConflictAlgorithm.replace);
+
+  Future<void> deleteWeight(String day) => _db.delete('weights', where: 'day = ?', whereArgs: [day]);
+
+  Future<List<MapEntry<String, double>>> weights() async =>
+      (await _db.query('weights', orderBy: 'day'))
+          .map((r) => MapEntry(r['day'] as String, (r['kg'] as num).toDouble()))
+          .toList();
+
+  // ---- backup
+  Future<Map<String, Object?>> exportAll() async => {
+        'app': 'dietownik',
+        'version': 1,
+        'foods': await _db.query('foods'),
+        'entries': await _db.query('entries'),
+        'recipes': await _db.query('recipes'),
+        'weights': await _db.query('weights'),
+      };
+
+  /// Replaces entries, recipes and weights; merges foods (the bundled pack stays).
+  Future<void> importAll(Map<String, dynamic> data) async {
+    if (data['app'] != 'dietownik') throw const FormatException('To nie jest kopia Dietownika.');
+    List<Map<String, Object?>> rows(String k) =>
+        ((data[k] as List?) ?? const []).map((e) => Map<String, Object?>.from(e as Map)).toList();
+    await _db.transaction((txn) async {
+      for (final t in ['entries', 'recipes', 'weights']) {
+        await txn.delete(t);
+      }
+      for (final t in ['entries', 'recipes', 'weights']) {
+        for (final r in rows(t)) {
+          await txn.insert(t, r, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+      for (final r in rows('foods')) {
+        final code = r['barcode'] as String?;
+        final dup = await txn.query('foods',
+            where: code != null && code.isNotEmpty ? 'barcode = ?' : 'LOWER(name) = ? AND LOWER(IFNULL(brand, "")) = ?',
+            whereArgs: code != null && code.isNotEmpty
+                ? [code]
+                : [(r['name'] as String).toLowerCase(), ((r['brand'] as String?) ?? '').toLowerCase()],
+            limit: 1);
+        if (dup.isEmpty) await txn.insert('foods', {...r}..remove('id'));
+      }
+    });
+  }
 }
