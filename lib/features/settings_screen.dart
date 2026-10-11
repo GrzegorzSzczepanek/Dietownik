@@ -1,8 +1,12 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ai/ai_settings.dart';
 import '../core/theme.dart';
+import '../domain/csv_import.dart';
 import '../domain/models.dart';
 import '../providers.dart';
 import 'api_provider_screen.dart';
@@ -74,11 +78,39 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ]),
         ),
+        const SizedBox(height: 8),
+        SectionCard(
+          padding: EdgeInsets.zero,
+          child: ListTile(
+            leading: const Icon(Icons.upload_file, color: AppColors.green),
+            title: const Text('Importuj produkty z CSV'),
+            subtitle: const Text('nazwa; marka; kcal; białko; węgle; tłuszcz; porcja g; na (100g/porcja); kod'),
+            onTap: () => _importCsv(context, ref),
+          ),
+        ),
         const SizedBox(height: 16),
         const Text('Dietownik 1.0 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe.',
             style: TextStyle(color: AppColors.muted, fontSize: 12)),
       ],
     );
+  }
+}
+
+Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
+  final pick = await FilePicker.pickFiles(type: FileType.any);
+  final path = pick.isEmpty ? null : pick.first.path;
+  if (path == null) return;
+  try {
+    final foods = parseFoodsCsv(await File(path).readAsString());
+    final db = ref.read(dbProvider);
+    for (final f in foods) {
+      await db.saveFood(f);
+    }
+    if (context.mounted) {
+      toast(context, foods.isEmpty ? 'Nie znalazłem poprawnych wierszy.' : 'Zaimportowano ${foods.length} produktów.');
+    }
+  } catch (e) {
+    if (context.mounted) toast(context, 'Import nie wyszedł: $e');
   }
 }
 

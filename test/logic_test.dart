@@ -1,11 +1,13 @@
 import 'package:dietownik/ai/diet_ai.dart';
 import 'package:dietownik/domain/fallback_parser.dart';
+import 'package:dietownik/domain/csv_import.dart';
 import 'package:dietownik/domain/meal_resolver.dart';
 import 'package:dietownik/domain/models.dart';
 import 'package:dietownik/services/recipe_import.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  csvTests();
   test('fallback parser splits items and reads amounts', () {
     final r = fallbackParseMeal('2 jajka, 200 g ryżu i kanapka z serem');
     expect(r.length, 3);
@@ -50,5 +52,15 @@ void main() {
     expect(r.ingredients.length, 2);
     expect(r.perServing.kcal, 320);
     expect(r.steps, contains('Ugotuj'));
+  });
+}
+
+void csvTests() {
+  test('csv import converts per-serving values', () {
+    final r = parseFoodsCsv('nazwa;marka;kcal;b;w;t;porcja;na;kod\nBurger;X;500;25;40;25;250;porcja;123\nSkyr;;63,0;11;4;0,2;;100g;');
+    expect(r.length, 2);
+    expect(r[0].kcal100, closeTo(200, 0.01));
+    expect(r[0].barcode, '123');
+    expect(r[1].kcal100, 63);
   });
 }
