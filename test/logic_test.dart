@@ -6,7 +6,11 @@ import 'package:dietownik/domain/models.dart';
 import 'package:dietownik/services/recipe_import.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:dietownik/data/food_seed.dart';
+import 'package:dietownik/data/generic_foods.dart';
+
 void main() {
+  genericTests();
   csvTests();
   test('fallback parser splits items and reads amounts', () {
     final r = fallbackParseMeal('2 jajka, 200 g ryżu i kanapka z serem');
@@ -62,5 +66,12 @@ void csvTests() {
     expect(r[0].kcal100, closeTo(200, 0.01));
     expect(r[0].barcode, '123');
     expect(r[1].kcal100, 63);
+  });
+}
+
+void genericTests() {
+  test('generic seed has no duplicate names', () {
+    final names = [...genericFoods, ...seedFoods].map((f) => '${f.name}|${f.brand}'.toLowerCase());
+    expect(names.toSet().length, names.length);
   });
 }

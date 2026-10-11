@@ -9,11 +9,13 @@ class AppDb {
 
   static Future<AppDb> open() async {
     final path = p.join(await getDatabasesPath(), 'dietownik.db');
-    final db = await openDatabase(path, version: 1, onCreate: (db, v) async {
+    final db = await openDatabase(path, version: 2, onUpgrade: (db, o, n) async {
+      if (o < 2) await db.execute('ALTER TABLE foods ADD COLUMN ingredients TEXT');
+    }, onCreate: (db, v) async {
       await db.execute('''CREATE TABLE foods(
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, brand TEXT, barcode TEXT,
         kcal100 REAL, p100 REAL, c100 REAL, f100 REAL, serving_g REAL, serving_label TEXT,
-        source TEXT, uses INTEGER DEFAULT 0, last_used INTEGER DEFAULT 0)''');
+        source TEXT, ingredients TEXT, uses INTEGER DEFAULT 0, last_used INTEGER DEFAULT 0)''');
       await db.execute('CREATE INDEX foods_barcode ON foods(barcode)');
       await db.execute('''CREATE TABLE entries(
         id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL, meal INTEGER, name TEXT,

@@ -6,7 +6,7 @@ import '../core/theme.dart';
 import '../domain/models.dart';
 import '../providers.dart';
 import 'common.dart';
-import 'food_search_screen.dart';
+import 'label_flow.dart';
 
 /// Barcode -> macros in one step: local cache first, then Open Food Facts.
 class ScanScreen extends ConsumerStatefulWidget {
@@ -45,18 +45,18 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Nie ma w bazie'),
-          content: Text('Kod $code nie jest w Open Food Facts. Wpisz wartości z etykiety — zapamiętam je na przyszłość.'),
+          content: Text('Kod $code nie jest w bazie. Sfotografuj etykietę — AI odczyta wartości i skład, a ja zapamiętam je pod tym kodem.'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Skanuj dalej')),
-            FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(120, 44)), onPressed: () => Navigator.pop(ctx, true), child: const Text('Wpisz')),
+            FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(120, 44)), onPressed: () => Navigator.pop(ctx, true), child: const Text('Etykieta')),
           ],
         ),
       );
       if (add == true && mounted) {
-        final f = await showCustomFoodDialog(context, barcode: code);
-        if (f != null) {
-          final id = await db.saveFood(f);
-          food = Food.fromMap({...f.toMap(), 'id': id});
+        final logged = await scanLabelFlow(context, ref, barcode: code);
+        if (logged && mounted) {
+          Navigator.pop(context);
+          return;
         }
       }
     }

@@ -35,9 +35,10 @@ class Food {
     this.servingG = 100,
     this.servingLabel = '',
     this.source = 'own',
+    this.ingredients = '',
   });
   final int? id;
-  final String name, brand;
+  final String name, brand, ingredients;
   final String? barcode;
   final double kcal100, p100, c100, f100, servingG;
   final String servingLabel;
@@ -63,6 +64,7 @@ class Food {
         'serving_g': servingG,
         'serving_label': servingLabel,
         'source': source,
+        'ingredients': ingredients,
       };
 
   factory Food.fromMap(Map<String, Object?> m) => Food(
@@ -77,6 +79,7 @@ class Food {
         servingG: (m['serving_g'] as num).toDouble(),
         servingLabel: (m['serving_label'] as String?) ?? '',
         source: (m['source'] as String?) ?? 'own',
+        ingredients: (m['ingredients'] as String?) ?? '',
       );
 }
 

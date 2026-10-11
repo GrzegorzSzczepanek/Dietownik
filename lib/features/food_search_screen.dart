@@ -8,6 +8,7 @@ import '../core/theme.dart';
 import '../domain/models.dart';
 import '../providers.dart';
 import 'common.dart';
+import 'label_flow.dart';
 
 class FoodSearchScreen extends ConsumerStatefulWidget {
   const FoodSearchScreen({super.key});
@@ -106,6 +107,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
             if (_q.text.trim().isNotEmpty) ...[
               const Divider(),
               ListTile(leading: const Icon(Icons.auto_awesome, color: AppColors.green), title: const Text('Oszacuj AI'), subtitle: Text('„${_q.text.trim()}”'), onTap: _estimate),
+              ListTile(leading: const Icon(Icons.photo_camera_outlined, color: AppColors.green), title: const Text('Zdjęcie etykiety (AI odczyta)'), onTap: () async { await scanLabelFlow(context, ref); if (mounted) Navigator.pop(context); }),
               ListTile(leading: const Icon(Icons.add_circle_outline, color: AppColors.green), title: const Text('Dodaj własny produkt'), onTap: () => _custom(_q.text.trim())),
             ],
           ]),
@@ -129,10 +131,17 @@ class Eyebrow2 extends StatelessWidget {
   Widget build(BuildContext context) => Text(t, style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 0.8));
 }
 
-Future<Food?> showCustomFoodDialog(BuildContext context, {String name = '', String? barcode}) {
-  final c = {for (final k in ['name', 'kcal', 'p', 'c', 'f', 'serving']) k: TextEditingController()};
-  c['name']!.text = name;
-  c['serving']!.text = '100';
+Future<Food?> showCustomFoodDialog(BuildContext context, {String name = '', String? barcode, Food? initial}) {
+  final c = {for (final k in ['name', 'brand', 'kcal', 'p', 'c', 'f', 'serving', 'ingr']) k: TextEditingController()};
+  String t(double? v) => v == null ? '' : (v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1));
+  c['name']!.text = initial?.name ?? name;
+  c['brand']!.text = initial?.brand ?? '';
+  c['kcal']!.text = t(initial?.kcal100);
+  c['p']!.text = t(initial?.p100);
+  c['c']!.text = t(initial?.c100);
+  c['f']!.text = t(initial?.f100);
+  c['serving']!.text = t(initial?.servingG ?? 100);
+  c['ingr']!.text = initial?.ingredients ?? '';
   double d(String k) => double.tryParse(c[k]!.text.replaceAll(',', '.')) ?? 0;
   Widget num(String k, String label) => Expanded(
         child: Padding(
@@ -143,12 +152,16 @@ Future<Food?> showCustomFoodDialog(BuildContext context, {String name = '', Stri
   return showDialog<Food>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Własny produkt (na 100 g)'),
+      title: const Text('Produkt (wartości na 100 g)'),
       content: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: c['name'], decoration: const InputDecoration(labelText: 'Nazwa')),
+          const SizedBox(height: 8),
+          TextField(controller: c['brand'], decoration: const InputDecoration(labelText: 'Marka')),
           Row(children: [num('kcal', 'kcal'), num('serving', 'porcja g')]),
           Row(children: [num('p', 'białko'), num('c', 'węgle'), num('f', 'tłuszcz')]),
+          const SizedBox(height: 8),
+          TextField(controller: c['ingr'], minLines: 1, maxLines: 5, decoration: const InputDecoration(labelText: 'Skład')),
         ]),
       ),
       actions: [
@@ -157,7 +170,15 @@ Future<Food?> showCustomFoodDialog(BuildContext context, {String name = '', Stri
           style: FilledButton.styleFrom(minimumSize: const Size(110, 44)),
           onPressed: () {
             if (c['name']!.text.trim().isEmpty) return;
-            Navigator.pop(ctx, Food(name: c['name']!.text.trim(), barcode: barcode, kcal100: d('kcal'), p100: d('p'), c100: d('c'), f100: d('f'), servingG: d('serving') > 0 ? d('serving') : 100));
+            Navigator.pop(ctx, Food(
+              name: c['name']!.text.trim(),
+              brand: c['brand']!.text.trim(),
+              barcode: barcode ?? initial?.barcode,
+              kcal100: d('kcal'), p100: d('p'), c100: d('c'), f100: d('f'),
+              servingG: d('serving') > 0 ? d('serving') : 100,
+              ingredients: c['ingr']!.text.trim(),
+              source: initial?.source ?? 'own',
+            ));
           },
           child: const Text('Zapisz'),
         ),

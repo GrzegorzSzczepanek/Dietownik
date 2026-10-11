@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import '../domain/models.dart';
 import 'ai_settings.dart';
@@ -32,15 +33,15 @@ class DietAi {
 
   bool canRun(AiTask t) => settings.engineFor(t) == AiEngine.api ? llm != null : local.isReady;
 
-  Future<String> _run(AiTask t, String system, String user, {bool json = false}) async {
+  Future<String> _run(AiTask t, String system, String user, {bool json = false, Uint8List? image}) async {
     if (settings.engineFor(t) == AiEngine.api) {
       final api = llm;
       if (api == null) throw LlmException('Dostawca API nie jest skonfigurowany.');
-      final r = await api.complete(system: system, user: user, json: json, maxTokens: 1500);
+      final r = await api.complete(system: system, user: user, image: image, json: json, maxTokens: 1500);
       await onTokens?.call(r.totalTokens);
       return r.text;
     }
-    return local.generate(system: system, user: user, json: json);
+    return local.generate(system: system, user: user, image: image, json: json);
   }
 
   static dynamic extractJson(String raw) {
@@ -124,4 +125,29 @@ kcal/p/c/f dotyczą jednej porcji. Po polsku. Bez komentarzy.''';
           kcal: _d(j['kcal']) ?? 0, p: _d(j['p']) ?? 0, c: _d(j['c']) ?? 0, f: _d(j['f']) ?? 0),
     );
   }
+
+  static const _labelPrompt = '''
+Odczytaj etykietę produktu spożywczego ze zdjęcia (tabela wartości odżywczych, skład, nazwa).
+Zwróć WYŁĄCZNIE JSON: {"name":"nazwa produktu","brand":"marka lub pusty","kcal100":n,"p100":n,"c100":n,"f100":n,"serving_g":masa_porcji_lub_100,"ingredients":"skład dosłownie"}
+Wartości na 100 g/ml. Jeśli tabela podaje tylko wartości na porcję, przelicz na 100 g. Jeśli nie widać wartości, wpisz null. Nie zgaduj. Bez komentarzy.''';
+
+  Future<LabelData> readLabel(Uint8List image) async {
+    final j = extractJson(await _run(AiTask.estimation, _labelPrompt, 'Zdjęcie etykiety.', json: true, image: image)) as Map;
+    return LabelData(
+      name: '${j['name'] ?? ''}'.trim(),
+      brand: '${j['brand'] ?? ''}'.trim(),
+      kcal100: _d(j['kcal100']),
+      p100: _d(j['p100']),
+      c100: _d(j['c100']),
+      f100: _d(j['f100']),
+      servingG: _d(j['serving_g']),
+      ingredients: '${j['ingredients'] ?? ''}'.trim(),
+    );
+  }
+}
+
+class LabelData {
+  const LabelData({required this.name, this.brand = '', this.kcal100, this.p100, this.c100, this.f100, this.servingG, this.ingredients = ''});
+  final String name, brand, ingredients;
+  final double? kcal100, p100, c100, f100, servingG;
 }
