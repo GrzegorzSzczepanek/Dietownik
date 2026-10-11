@@ -171,7 +171,7 @@ class SettingsScreen extends ConsumerWidget {
           NavRow(minHeight: 52, title: 'Przywróć z kopii', onTap: () => _restore(context, ref), trailing: const SizedBox.shrink()),
           NavRow(minHeight: 52, bottomLine: true, title: 'Importuj produkty z CSV', subtitle: 'nazwa; marka; kcal; białko; węgle; tłuszcz; porcja g; na; kod', onTap: () => _importCsv(context, ref), trailing: const SizedBox.shrink()),
           const SizedBox(height: 20),
-          Text('Dietownik 1.0.3 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
+          Text('Dietownik 1.0.4 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
               style: fig(13, color: AppColors.text2, height: 18 / 13)),
         ]),
       ),

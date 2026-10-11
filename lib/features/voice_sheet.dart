@@ -9,6 +9,7 @@ import '../domain/meal_resolver.dart';
 import '../domain/models.dart';
 import '../domain/shopping_parser.dart';
 import '../providers.dart';
+import '../speech_helper.dart';
 import 'api_provider_screen.dart';
 import 'common.dart';
 import 'edit_entry_sheet.dart';
@@ -66,7 +67,8 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
         if (_heard.trim().isNotEmpty) {
           _submit(_heard);
         } else {
-          setState(() => _error = 'Nie usłyszałem nic. Spróbuj jeszcze raz albo wpisz.');
+          _stt.cancel();
+          setState(() => _error = speechErrorText(e.errorMsg));
         }
       },
     );
@@ -74,11 +76,12 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
       if (mounted) {
         setState(() {
           _phase = _Phase.typing;
-          _error = 'Rozpoznawanie mowy niedostępne (sprawdź zgodę na mikrofon). Wpisz posiłek.';
+          _error = speechUnavailableText;
         });
       }
       return;
     }
+    final locale = await pickPolishLocale(_stt);
     await _stt.listen(
       onResult: (r) {
         if (!mounted) return;
@@ -86,16 +89,26 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
         if (r.finalResult && _heard.trim().isNotEmpty) _submit(_heard);
       },
       listenOptions: SpeechListenOptions(
-          localeId: 'pl_PL', partialResults: true, pauseFor: const Duration(seconds: 3), listenFor: const Duration(seconds: 45)),
+        localeId: locale,
+        partialResults: true,
+        listenMode: ListenMode.dictation,
+        pauseFor: const Duration(seconds: 4),
+        listenFor: const Duration(seconds: 60),
+      ),
     );
   }
 
   Future<void> _stopAndSubmit() async {
+    // After an error the big button simply tries again.
+    if (_error != null) {
+      await _start();
+      return;
+    }
     await _stt.stop();
     if (_heard.trim().isNotEmpty) {
       _submit(_heard);
     } else {
-      setState(() => _error = 'Nic nie nagrałem. Dotknij mikrofon i mów.');
+      setState(() => _error = speechErrorText('brak nagrania'));
     }
   }
 

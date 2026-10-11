@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../core/theme.dart';
+import '../speech_helper.dart';
 
 /// Small "speak now" sheet that returns the recognised sentence (or null).
 Future<String?> showDictation(BuildContext context, {String hint = 'Słucham…'}) =>
@@ -37,13 +38,21 @@ class _DictationState extends State<_Dictation> {
   }
 
   Future<void> _start() async {
-    final ok = await _stt.initialize(onError: (_) {
-      if (mounted && _heard.isEmpty) setState(() => _error = 'Nic nie usłyszałem. Dotknij mikrofon i spróbuj ponownie.');
+    setState(() { _error = null; _heard = ''; });
+    final ok = await _stt.initialize(onError: (e) {
+      if (!mounted) return;
+      if (_heard.trim().isNotEmpty) {
+        Navigator.pop(context, _heard);
+      } else {
+        _stt.cancel();
+        setState(() => _error = speechErrorText(e.errorMsg));
+      }
     });
     if (!ok) {
-      if (mounted) setState(() => _error = 'Rozpoznawanie mowy niedostępne. Sprawdź zgodę na mikrofon.');
+      if (mounted) setState(() => _error = speechUnavailableText);
       return;
     }
+    final locale = await pickPolishLocale(_stt);
     await _stt.listen(
       onResult: (r) {
         if (!mounted) return;
@@ -51,7 +60,12 @@ class _DictationState extends State<_Dictation> {
         if (r.finalResult && _heard.trim().isNotEmpty) Navigator.pop(context, _heard);
       },
       listenOptions: SpeechListenOptions(
-          localeId: 'pl_PL', partialResults: true, pauseFor: const Duration(seconds: 3), listenFor: const Duration(seconds: 45)),
+        localeId: locale,
+        partialResults: true,
+        listenMode: ListenMode.dictation,
+        pauseFor: const Duration(seconds: 4),
+        listenFor: const Duration(seconds: 60),
+      ),
     );
   }
 
@@ -61,6 +75,10 @@ class _DictationState extends State<_Dictation> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           GestureDetector(
             onTap: () async {
+              if (_error != null) {
+                await _start();
+                return;
+              }
               await _stt.stop();
               if (_heard.trim().isNotEmpty && mounted) Navigator.pop(context, _heard);
             },
