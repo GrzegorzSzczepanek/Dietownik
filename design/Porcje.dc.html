@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dietownik, Porcje przepisu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FFFFFF;font-family:'Figtree',system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#17201C;box-sizing:border-box">
+  <div style="background:#E3EDE8;border-radius:0 0 32px 32px;padding:44px 20px 24px">
+    <header style="display:flex;align-items:center;gap:4px;height:52px;margin-left:-12px">
+      <a href="Przepisy.dc.html" aria-label="Wróć" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"/></svg></a>
+      <div style="font-size:15px;color:#3A463F">Przepis</div>
+    </header>
+    <div style="margin-top:4px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:30px;line-height:36px">Zupa pomidorowa z ryżem</div>
+    <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between">
+      <button aria-label="Mniej porcji" style="width:56px;height:56px;border-radius:50%;border:0;background:#FFFFFF;color:#12392C;font:700 28px 'Figtree',sans-serif">−</button>
+      <div style="text-align:center"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:72px;line-height:72px;letter-spacing:-0.02em">6</div><div style="font-size:17px;font-weight:600">porcji w garnku</div></div>
+      <button aria-label="Więcej porcji" style="width:56px;height:56px;border-radius:50%;border:0;background:#FFFFFF;color:#12392C;font:700 28px 'Figtree',sans-serif">+</button>
+    </div>
+  </div>
+  <div style="padding:20px 20px 0">
+    <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-size:17px;font-weight:700">Jedna porcja</div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:28px">~310 kcal</div></div>
+    <div style="margin-top:4px;font-size:14px;color:#566059">Cały garnek ~1860 kcal. Składniki przeliczone z przepisu.</div>
+    <div style="margin-top:16px;display:flex;gap:20px;font-size:15px;font-weight:600"><span style="color:#2B4BC9">B 9 g</span><span style="color:#B56A0A">W 48 g</span><span style="color:#B04A35">T 8 g</span></div>
+    <div style="margin-top:20px;font-size:16px;font-weight:700">Ile zjadłeś?</div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button aria-pressed="true" style="flex:1;height:48px;border-radius:14px;border:2px solid #1F5F4A;background:#E3EDE8;font:700 15px 'Figtree',sans-serif;color:#12392C">1 porcja</button>
+      <button style="flex:1;height:48px;border-radius:14px;border:1px solid #CBD3CE;background:transparent;font:700 15px 'Figtree',sans-serif">1,5</button>
+      <button style="flex:1;height:48px;border-radius:14px;border:1px solid #CBD3CE;background:transparent;font:700 15px 'Figtree',sans-serif">2</button>
+    </div>
+    <div style="margin-top:20px;min-height:60px;border-top:1px solid #E1E6E3;border-bottom:1px solid #E1E6E3;display:flex;align-items:center;gap:12px"><div style="flex:1"><div style="font-size:16px;font-weight:600">Ugotowałem na kilka dni</div><div style="font-size:14px;line-height:20px;color:#566059">Zjem dziś 1 porcję, 5 zostaje w lodówce</div></div><div style="width:52px;height:32px;border-radius:16px;background:#1F5F4A;position:relative"><div style="position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#FFFFFF"></div></div></div>
+  </div>
+  <div style="position:absolute;left:24px;right:24px;bottom:32px"><a href="Main.dc.html" style="height:56px;border-radius:16px;background:#1F5F4A;color:#FFFFFF;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:17px;font-weight:700">Zjadłem 1 porcję, ~310 kcal</a></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

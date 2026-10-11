@@ -25,33 +25,34 @@ class SectionCard extends StatelessWidget {
 }
 
 class Pill extends StatelessWidget {
-  const Pill(this.text, {super.key, this.bg = AppColors.chip, this.fg = AppColors.ink});
+  const Pill(this.text, {super.key, this.bg, this.fg});
   final String text;
-  final Color bg;
-  final Color fg;
+  final Color? bg;
+  final Color? fg;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
-        child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 13)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(color: bg ?? AppColors.hero, borderRadius: BorderRadius.circular(99)),
+        child: Text(text, style: fig(13, weight: 600, color: fg ?? AppColors.accentDeep)),
       );
 }
 
+/// Thin rounded progress bar on the hero track color.
 class ProgressBar extends StatelessWidget {
-  const ProgressBar(this.fraction, {super.key, this.color = AppColors.green, this.height = 10});
+  const ProgressBar(this.fraction, {super.key, this.color, this.height = 10});
   final double fraction;
-  final Color color;
+  final Color? color;
   final double height;
 
   @override
   Widget build(BuildContext context) => ClipRRect(
         borderRadius: BorderRadius.circular(99),
         child: LinearProgressIndicator(
-          value: fraction.clamp(0, 1),
+          value: fraction.clamp(0.0, 1.0).toDouble(),
           minHeight: height,
           backgroundColor: AppColors.track,
-          valueColor: AlwaysStoppedAnimation(color),
+          valueColor: AlwaysStoppedAnimation(color ?? AppColors.accent),
         ),
       );
 }
@@ -78,13 +79,12 @@ class Initial extends StatelessWidget {
       );
 }
 
+/// Section heading: Figtree 16/700, sentence case (no CAPS, no letter spacing).
 class Eyebrow extends StatelessWidget {
   const Eyebrow(this.text, {super.key});
   final String text;
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 13, letterSpacing: 0.8));
+  Widget build(BuildContext context) => Text(text, style: fig(16, weight: 700));
 }
 
 /// Lokalnie | API switch used per AI task.

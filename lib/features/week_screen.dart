@@ -24,7 +24,7 @@ class WeekScreen extends ConsumerWidget {
       body: ListView(padding: const EdgeInsets.all(16), children: [
         SectionCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Eyebrow('KALORIE DZIENNIE'),
+            const Eyebrow('Kalorie dziennie'),
             const SizedBox(height: 12),
             SizedBox(
               height: 190,
@@ -62,11 +62,11 @@ class WeekScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         SectionCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Eyebrow('ŚREDNIA Z DNI Z WPISAMI'),
+            const Eyebrow('Średnia z dni z wpisami'),
             const SizedBox(height: 8),
-            Text('${n0(avg.kcal)} kcal', style: mono(size: 26)),
+            Text('${n0(avg.kcal)} kcal', style: figure(size: 26)),
             const SizedBox(height: 4),
-            Text('${macroText(avg)}  ·  cel ${n0(goals.kcal)} kcal', style: const TextStyle(color: AppColors.muted)),
+            Text('${macroText(avg)}  ·  cel ${n0(goals.kcal)} kcal', style: TextStyle(color: AppColors.muted)),
             const SizedBox(height: 8),
             Text('Dni z wpisem: ${logged.length} z 7', style: const TextStyle(fontWeight: FontWeight.w600)),
           ]),

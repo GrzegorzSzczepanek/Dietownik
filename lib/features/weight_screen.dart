@@ -65,14 +65,14 @@ class WeightScreen extends ConsumerWidget {
       body: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 100), children: [
         SectionCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(last == null ? '—' : '${last.toStringAsFixed(1)} kg', style: mono(size: 34)),
+            Text(last == null ? '—' : '${last.toStringAsFixed(1)} kg', style: figure(size: 34)),
             const SizedBox(height: 4),
-            Text(trend(), style: const TextStyle(color: AppColors.muted)),
+            Text(trend(), style: TextStyle(color: AppColors.muted)),
             const SizedBox(height: 16),
             SizedBox(
               height: 180,
               child: pts.length < 2
-                  ? const Center(child: Text('Wykres pojawi się po dwóch pomiarach.', style: TextStyle(color: AppColors.muted)))
+                  ? Center(child: Text('Wykres pojawi się po dwóch pomiarach.', style: TextStyle(color: AppColors.muted)))
                   : _Chart(pts),
             ),
           ]),
@@ -80,7 +80,7 @@ class WeightScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         for (final e in all.reversed.take(30))
           ListTile(
-            title: Text('${e.value.toStringAsFixed(1)} kg', style: mono(size: 16)),
+            title: Text('${e.value.toStringAsFixed(1)} kg', style: figure(size: 16)),
             subtitle: Text(e.key),
             trailing: IconButton(
               icon: const Icon(Icons.delete_outline),

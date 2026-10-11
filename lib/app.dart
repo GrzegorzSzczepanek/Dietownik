@@ -25,7 +25,16 @@ class _DietownikAppState extends ConsumerState<DietownikApp> {
     return MaterialApp(
       title: 'Dietownik',
       debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: ThemeMode.system,
+      builder: (context, child) {
+        // Tokens are read through static getters; re-key the tree so every
+        // screen picks the new palette when the system theme flips.
+        final b = Theme.of(context).brightness;
+        AppColors.setBrightness(b);
+        return KeyedSubtree(key: ValueKey(b), child: child!);
+      },
       home: const Shell(),
     );
   }

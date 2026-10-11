@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dietownik, Tryb ciemny</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#0F1613;font-family:'Figtree',system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#EAF0EC;box-sizing:border-box">
+  <div style="background:#1A2822;border-radius:0 0 32px 32px;padding:44px 20px 24px">
+    <div style="height:52px;display:flex;align-items:center;font-size:15px;color:#B7C4BD">Niedziela, 11 października</div>
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:72px;line-height:72px;letter-spacing:-0.02em">1468</div>
+    <div style="font-size:19px;font-weight:600">kcal zostało</div>
+    <div style="margin-top:16px;height:12px;border-radius:6px;background:#2F4A3F"><div style="width:27%;height:12px;border-radius:6px;background:#5CC3A0"></div></div>
+    <div style="margin-top:8px;font-size:15px;color:#B7C4BD">Zjedzone 532 z 2000</div>
+    <div style="margin-top:16px;display:flex;gap:24px;font-size:15px;font-weight:600"><span style="color:#8FA6FF">B 24 g</span><span style="color:#F0B05A">W 61 g</span><span style="color:#F08A73">T 22 g</span></div>
+  </div>
+  <div style="padding:16px 20px 0">
+    <div style="display:flex;gap:8px">
+      <a href="Skaner.dc.html" style="flex:1;height:52px;border-radius:14px;border:1px solid #3B4D45;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:15px;font-weight:700">Skanuj</a>
+      <a href="Szukaj.dc.html" style="flex:1;height:52px;border-radius:14px;border:1px solid #3B4D45;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:15px;font-weight:700">Szukaj</a>
+      <a href="#" style="flex:1;height:52px;border-radius:14px;border:1px solid #3B4D45;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:15px;font-weight:700">+250 ml</a>
+    </div>
+    <div style="margin-top:20px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px">Obiad</div>
+    <div style="height:60px;border-bottom:1px solid #263630;display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:600"><span>Jajko</span><span>157</span></div>
+    <div style="height:60px;border-bottom:1px solid #263630;display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:600"><span>Kanapka z serem</span><span>312</span></div>
+    <div style="height:60px;display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:600"><span>Kawa z mlekiem</span><span>63</span></div>
+  </div>
+  <nav aria-label="Główna nawigacja" style="position:absolute;left:0;right:0;bottom:0;height:84px;background:#0F1613;border-top:1px solid #263630;display:flex;padding:8px 8px 0;box-sizing:border-box;font-size:12px;font-weight:600;color:#B7C4BD">
+    <div style="flex:1;text-align:center;padding-top:6px;color:#5CC3A0;font-weight:700">Dziś</div>
+    <div style="flex:1;text-align:center;padding-top:6px">Przepisy</div>
+    <div style="width:92px;flex:none"></div>
+    <div style="flex:1;text-align:center;padding-top:6px">Czat</div>
+    <div style="flex:1;text-align:center;padding-top:6px">Ja</div>
+    <a href="Mikrofon-slucham.dc.html" aria-label="Powiedz, co zjadłeś" style="position:absolute;left:50%;top:-28px;margin-left:-35px;width:70px;height:70px;border-radius:50%;background:#5CC3A0;color:#0F1613;border:6px solid #0F1613;box-sizing:border-box;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

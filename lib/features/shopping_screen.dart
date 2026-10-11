@@ -35,7 +35,7 @@ class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
           decoration: InputDecoration(
             hintText: 'np. jajka, ser, masło',
             suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
-              IconButton(icon: const Icon(Icons.mic, color: AppColors.green), onPressed: _dictate),
+              IconButton(icon: Icon(Icons.mic, color: AppColors.green), onPressed: _dictate),
               IconButton(icon: const Icon(Icons.add), onPressed: _add),
             ]),
           ),

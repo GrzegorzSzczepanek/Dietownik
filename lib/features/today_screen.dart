@@ -103,7 +103,7 @@ class _AiBanner extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApiProviderScreen())),
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.all(14),
             child: Row(children: [
               Icon(Icons.auto_awesome, color: AppColors.amberInk),
@@ -137,7 +137,7 @@ class _WeeklyLine extends ConsumerWidget {
       child: SectionCard(
         padding: const EdgeInsets.all(14),
         child: Row(children: [
-          const Icon(Icons.date_range, color: AppColors.green),
+          Icon(Icons.date_range, color: AppColors.green),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -167,7 +167,7 @@ class _WaterRow extends ConsumerWidget {
     return SectionCard(
       padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
       child: Row(children: [
-        const Icon(Icons.water_drop_outlined, color: AppColors.blue),
+        Icon(Icons.water_drop_outlined, color: AppColors.blue),
         const SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -194,7 +194,7 @@ class _QuickButton extends StatelessWidget {
   Widget build(BuildContext context) => Material(
         color: Colors.white,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18), side: const BorderSide(color: AppColors.border)),
+            borderRadius: BorderRadius.circular(18), side: BorderSide(color: AppColors.border)),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
@@ -229,9 +229,9 @@ class _SummaryCard extends StatelessWidget {
               painter: _RingPainter(total.kcal / goals.kcal, over ? AppColors.amber : AppColors.green),
               child: Center(
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(n0(left.abs()), style: mono(size: 28)),
+                  Text(n0(left.abs()), style: figure(size: 28)),
                   Text(over ? 'ponad' : 'zostało',
-                      style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                      style: TextStyle(color: AppColors.muted, fontSize: 12)),
                 ]),
               ),
             ),
@@ -239,7 +239,7 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(width: 20),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${n0(total.kcal)} / ${n0(goals.kcal)} kcal', style: mono(size: 16)),
+              Text('${n0(total.kcal)} / ${n0(goals.kcal)} kcal', style: figure(size: 16)),
               const SizedBox(height: 12),
               _MacroBar('Białko', total.p, goals.p, AppColors.blue),
               const SizedBox(height: 8),
@@ -262,7 +262,7 @@ class _MacroBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          Text(label, style: TextStyle(fontSize: 12, color: AppColors.muted)),
           Text('${n0(v)}/${n0(goal)} g', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 3),
@@ -297,7 +297,7 @@ class _Frequent extends ConsumerWidget {
     final list = ref.watch(frequentProvider).value ?? const <Entry>[];
     if (list.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Eyebrow('ZWYKLE JESZ — JEDEN TAP'),
+      const Eyebrow('Zwykle jesz'),
       const SizedBox(height: 8),
       SizedBox(
         height: 44,
@@ -334,13 +334,13 @@ class _EmptyDay extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: SectionCard(
           child: Column(children: [
-            const Icon(Icons.mic_none, size: 40, color: AppColors.green),
+            Icon(Icons.mic_none, size: 40, color: AppColors.green),
             const SizedBox(height: 8),
             Text(isToday ? 'Nic jeszcze. Naciśnij mikrofon i powiedz, co jadłeś.' : 'Brak wpisów tego dnia.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
-            const Text('np. „dwa jajka, kanapka z serem i kawa z mlekiem”',
+            Text('np. „dwa jajka, kanapka z serem i kawa z mlekiem”',
                 textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -376,13 +376,13 @@ class _MealSection extends ConsumerWidget {
           InkWell(
             onLongPress: () => _saveSet(context, ref),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Eyebrow(mealNames[meal].toUpperCase()),
+              Eyebrow(mealNames[meal]),
               Row(children: [
-                Text('${n0(kcal)} kcal', style: mono(size: 14)),
+                Text('${n0(kcal)} kcal', style: figure(size: 14)),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   tooltip: 'Zapisz jako zestaw',
-                  icon: const Icon(Icons.bookmark_add_outlined, size: 20, color: AppColors.muted),
+                  icon: Icon(Icons.bookmark_add_outlined, size: 20, color: AppColors.muted),
                   onPressed: () => _saveSet(context, ref),
                 ),
               ]),
@@ -406,7 +406,7 @@ extension on _MealSection {
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: ctrl, autofocus: true, decoration: const InputDecoration(labelText: 'Nazwa, którą powiesz')),
           const SizedBox(height: 8),
-          const Text('Potem wystarczy powiedzieć tę nazwę do mikrofonu.', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+          Text('Potem wystarczy powiedzieć tę nazwę do mikrofonu.', style: TextStyle(fontSize: 12, color: AppColors.muted)),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Anuluj')),
@@ -435,7 +435,7 @@ class _EntryTile extends ConsumerWidget {
             color: AppColors.amberSoft,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 16),
-            child: const Icon(Icons.delete_outline, color: AppColors.amberInk)),
+            child: Icon(Icons.delete_outline, color: AppColors.amberInk)),
         onDismissed: (_) async {
           final db = ref.read(dbProvider);
           await db.deleteEntry(e.id!);
@@ -457,7 +457,7 @@ class _EntryTile extends ConsumerWidget {
               style: const TextStyle(fontWeight: FontWeight.w600)),
           subtitle: Text('${n0(e.grams)} g · ${macroText(e.macros)}',
               style: const TextStyle(fontSize: 12)),
-          trailing: Text('${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: mono(size: 15)),
+          trailing: Text('${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: figure(size: 15)),
           onTap: () => _edit(context, ref),
         ),
       );
@@ -500,7 +500,7 @@ class _WeekStrip extends ConsumerWidget {
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeekScreen())),
       child: SectionCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Eyebrow('OSTATNIE 7 DNI  ·  szczegóły ›'),
+        const Eyebrow('Ostatnie 7 dni  ·  szczegóły ›'),
         const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           for (final d in days)
@@ -520,12 +520,12 @@ class _WeekStrip extends ConsumerWidget {
                       size: 18, color: !logged ? AppColors.muted : (ok ? AppColors.green : AppColors.amber)),
                 ),
                 const SizedBox(height: 4),
-                Text(DateFormat('E', 'pl').format(d), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                Text(DateFormat('E', 'pl').format(d), style: TextStyle(fontSize: 11, color: AppColors.muted)),
               ]);
             }),
         ]),
         const SizedBox(height: 10),
-        Text(msg, style: const TextStyle(color: AppColors.muted)),
+        Text(msg, style: TextStyle(color: AppColors.muted)),
       ]),
     ));
   }

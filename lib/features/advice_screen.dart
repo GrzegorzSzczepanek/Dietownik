@@ -95,12 +95,12 @@ class _AdviceScreenState extends ConsumerState<AdviceScreen> {
         if (_busy) const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
         if (_answer != null)
           SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Eyebrow((_asked ?? '').toUpperCase()),
+            Eyebrow(_asked ?? ''),
             const SizedBox(height: 8),
             SelectableText(_answer!, style: const TextStyle(fontSize: 16, height: 1.45)),
           ])),
         const SizedBox(height: 20),
-        const Eyebrow('MAŁE ZASADY DLA LENIWEGO MÓZGU'),
+        const Eyebrow('Małe zasady dla leniwego mózgu'),
         const SizedBox(height: 8),
         for (final t in _tips)
           Padding(
@@ -110,7 +110,7 @@ class _AdviceScreenState extends ConsumerState<AdviceScreen> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(t.$1, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                 const SizedBox(height: 2),
-                Text(t.$2, style: const TextStyle(color: AppColors.muted, height: 1.35)),
+                Text(t.$2, style: TextStyle(color: AppColors.muted, height: 1.35)),
               ]),
             ),
           ),

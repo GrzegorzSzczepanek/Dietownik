@@ -34,10 +34,10 @@ Future<double?> askGrams(BuildContext context, Food food, {double? initial}) {
             ),
           ],
           const SizedBox(height: 12),
-          Text('${n0(m.kcal)} kcal', style: mono(size: 22)),
-          Text(macroText(m), style: const TextStyle(color: AppColors.muted)),
+          Text('${n0(m.kcal)} kcal', style: figure(size: 22)),
+          Text(macroText(m), style: TextStyle(color: AppColors.muted)),
           if (food.estimated)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 6),
               child: Text('~ wartości szacunkowe', style: TextStyle(color: AppColors.amber)),
             ),

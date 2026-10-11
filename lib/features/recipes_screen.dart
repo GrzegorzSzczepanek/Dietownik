@@ -229,7 +229,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             Expanded(child: TextField(controller: _servings, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Porcji'))),
           ]),
           const SizedBox(height: 14),
-          const Eyebrow('NA JEDNĄ PORCJĘ'),
+          const Eyebrow('Na jedną porcję'),
           const SizedBox(height: 6),
           Row(children: [
             for (final e in [(_k, 'kcal'), (_p, 'B'), (_c, 'W'), (_f, 'T')])

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dietownik, Zakupy</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FFFFFF;font-family:'Figtree',system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#17201C;box-sizing:border-box">
+
+  <div style="background:#E3EDE8;border-radius:0 0 32px 32px;padding:44px 20px 20px">
+    <header style="display:flex;align-items:center;gap:4px;height:52px;margin-left:-12px">
+      <a href="Przepisy.dc.html" aria-label="Wróć" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"/></svg></a>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:28px;line-height:34px">Zakupy</div>
+    </header>
+    <div style="margin-top:4px;display:flex;align-items:baseline;gap:10px">
+      <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:72px;line-height:72px;letter-spacing:-0.02em">3</span>
+      <span style="font-size:17px;font-weight:600">do kupienia</span>
+    </div>
+    <label style="margin-top:14px;height:56px;border-radius:16px;background:#FFFFFF;display:flex;align-items:center;gap:6px;padding:0 8px 0 16px;box-sizing:border-box">
+      <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Dodaj do listy</span>
+      <input type="text" placeholder="np. jajka, ser, masło" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 16px 'Figtree',sans-serif;color:#17201C">
+      <button aria-label="Dodaj głosem" style="width:44px;height:44px;border:0;background:transparent;color:#1F5F4A;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg></button>
+      <button aria-label="Dodaj do listy" style="width:44px;height:44px;border-radius:12px;border:0;background:#1F5F4A;color:#FFFFFF;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    </label>
+  </div>
+
+  <div style="padding:12px 20px 0">
+    <label style="display:flex;align-items:center;gap:14px;min-height:60px">
+      <input type="checkbox" style="width:24px;height:24px;margin:0;accent-color:#1F5F4A">
+      <span style="flex:1;font-size:17px;font-weight:600">masło</span>
+      <span style="font-size:14px;color:#566059">Omlet z serem</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:14px;min-height:60px;border-top:1px solid #E1E6E3">
+      <input type="checkbox" style="width:24px;height:24px;margin:0;accent-color:#1F5F4A">
+      <span style="flex:1;font-size:17px;font-weight:600">cebula</span>
+      <span style="font-size:14px;color:#566059">Szakszuka</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:14px;min-height:60px;border-top:1px solid #E1E6E3">
+      <input type="checkbox" style="width:24px;height:24px;margin:0;accent-color:#1F5F4A">
+      <span style="flex:1;font-size:17px;font-weight:600">papryka</span>
+      <span style="font-size:14px;color:#566059">Szakszuka</span>
+    </label>
+
+    <div style="margin-top:20px;font-size:16px;font-weight:700;color:#3A463F">Kupione</div>
+    <label style="margin-top:4px;display:flex;align-items:center;gap:14px;min-height:60px;border-top:1px solid #E1E6E3;border-bottom:1px solid #E1E6E3">
+      <input type="checkbox" checked style="width:24px;height:24px;margin:0;accent-color:#1F5F4A">
+      <span style="flex:1;font-size:17px;color:#566059;text-decoration:line-through">pomidory</span>
+    </label>
+    <a href="#" style="margin-top:8px;min-height:48px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:15px;font-weight:600;color:#1F5F4A">Usuń kupione</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

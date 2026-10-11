@@ -9,6 +9,7 @@ import '../domain/models.dart';
 import '../providers.dart';
 import 'common.dart';
 import 'label_flow.dart';
+import 'widgets.dart';
 
 class FoodSearchScreen extends ConsumerStatefulWidget {
   const FoodSearchScreen({super.key});
@@ -117,16 +118,16 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         ),
         Expanded(
           child: ListView(children: [
-            if (_q.text.isEmpty && _local.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 0), child: Eyebrow2('OSTATNIO UŻYWANE I POPULARNE')),
+            if (_q.text.isEmpty && _local.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 0), child: Eyebrow('Ostatnio używane i popularne')),
             for (final f in _local) tile(f),
             if (_loadingWeb) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
-            if (_web.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 12, 16, 4), child: Eyebrow2('Z OPEN FOOD FACTS')),
+            if (_web.isNotEmpty) const Padding(padding: EdgeInsets.fromLTRB(16, 12, 16, 4), child: Eyebrow('Z Open Food Facts')),
             for (final f in _web) tile(f),
             if (_q.text.trim().isNotEmpty) ...[
               const Divider(),
-              ListTile(leading: const Icon(Icons.auto_awesome, color: AppColors.green), title: const Text('Oszacuj AI'), subtitle: Text('„${_q.text.trim()}”'), onTap: _estimate),
-              ListTile(leading: const Icon(Icons.photo_camera_outlined, color: AppColors.green), title: const Text('Zdjęcie etykiety (AI odczyta)'), onTap: () async { await scanLabelFlow(context, ref); if (mounted) Navigator.pop(context); }),
-              ListTile(leading: const Icon(Icons.add_circle_outline, color: AppColors.green), title: const Text('Dodaj własny produkt'), onTap: () => _custom(_q.text.trim())),
+              ListTile(leading: Icon(Icons.auto_awesome, color: AppColors.green), title: const Text('Oszacuj AI'), subtitle: Text('„${_q.text.trim()}”'), onTap: _estimate),
+              ListTile(leading: Icon(Icons.photo_camera_outlined, color: AppColors.green), title: const Text('Zdjęcie etykiety (AI odczyta)'), onTap: () async { await scanLabelFlow(context, ref); if (mounted) Navigator.pop(context); }),
+              ListTile(leading: Icon(Icons.add_circle_outline, color: AppColors.green), title: const Text('Dodaj własny produkt'), onTap: () => _custom(_q.text.trim())),
             ],
           ]),
         ),
@@ -140,13 +141,6 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     final id = await ref.read(dbProvider).saveFood(f);
     await _pick(Food.fromMap({...f.toMap(), 'id': id}));
   }
-}
-
-class Eyebrow2 extends StatelessWidget {
-  const Eyebrow2(this.t, {super.key});
-  final String t;
-  @override
-  Widget build(BuildContext context) => Text(t, style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 0.8));
 }
 
 Future<Food?> showCustomFoodDialog(BuildContext context, {String name = '', String? barcode, Food? initial}) {

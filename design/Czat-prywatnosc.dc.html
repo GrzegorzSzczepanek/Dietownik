@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dietownik, Dane czatu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FFFFFF;font-family:'Figtree',system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#17201C;box-sizing:border-box">
+  <div style="background:#E3EDE8;border-radius:0 0 32px 32px;padding:44px 20px 20px">
+    <header style="display:flex;align-items:center;gap:4px;height:52px;margin-left:-12px">
+      <a href="Czat-dane.dc.html" aria-label="Wróć" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"/></svg></a>
+      <div style="font-size:15px;color:#3A463F">Czat</div>
+    </header>
+    <div style="margin-top:4px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:30px;line-height:36px">Do czego czat ma dostęp?</div>
+    <div style="margin-top:8px;font-size:16px;line-height:24px;color:#3A463F">Domyślnie do wszystkiego z aplikacji, żeby radził na twoich danych. Każde źródło wyłączysz.</div>
+  </div>
+  <div style="padding:4px 20px 0">
+    <div style="display:flex;align-items:center;gap:12px;min-height:64px"><div style="flex:1"><div style="font-size:16px;font-weight:700">Dzisiejszy bilans</div><div style="font-size:14px;color:#566059">Kalorie i makro z dziś</div></div><div style="width:52px;height:32px;border-radius:16px;background:#1F5F4A;position:relative"><div style="position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#FFFFFF"></div></div></div>
+    <div style="display:flex;align-items:center;gap:12px;min-height:64px;border-top:1px solid #E1E6E3"><div style="flex:1"><div style="font-size:16px;font-weight:700">Historia wpisów</div><div style="font-size:14px;color:#566059">Ostatnie 90 dni, z godzinami</div></div><div style="width:52px;height:32px;border-radius:16px;background:#1F5F4A;position:relative"><div style="position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#FFFFFF"></div></div></div>
+    <div style="display:flex;align-items:center;gap:12px;min-height:64px;border-top:1px solid #E1E6E3"><div style="flex:1"><div style="font-size:16px;font-weight:700">Cele i statystyki</div><div style="font-size:14px;color:#566059">Cel dzienny, średnie, woda</div></div><div style="width:52px;height:32px;border-radius:16px;background:#1F5F4A;position:relative"><div style="position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#FFFFFF"></div></div></div>
+    <div style="display:flex;align-items:center;gap:12px;min-height:64px;border-top:1px solid #E1E6E3"><div style="flex:1"><div style="font-size:16px;font-weight:700">Lodówka i zakupy</div><div style="font-size:14px;color:#566059">Co masz i czego brakuje</div></div><div style="width:52px;height:32px;border-radius:16px;background:#1F5F4A;position:relative"><div style="position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#FFFFFF"></div></div></div>
+    <div style="display:flex;align-items:center;gap:12px;min-height:64px;border-top:1px solid #E1E6E3"><div style="flex:1"><div style="font-size:16px;font-weight:700">Zapisane przepisy</div><div style="font-size:14px;color:#566059">Własne i zaimportowane</div></div><div style="width:52px;height:32px;border-radius:16px;background:#1F5F4A;position:relative"><div style="position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#FFFFFF"></div></div></div>
+    <div style="display:flex;align-items:center;gap:12px;min-height:64px;border-top:1px solid #E1E6E3;border-bottom:1px solid #E1E6E3"><div style="flex:1"><div style="font-size:16px;font-weight:700">Szukanie w internecie</div><div style="font-size:14px;color:#566059">Wysyłam tylko samo pytanie</div></div><div style="width:52px;height:32px;border-radius:16px;background:#1F5F4A;position:relative"><div style="position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#FFFFFF"></div></div></div>
+    <div style="margin-top:12px;font-size:14px;line-height:20px;color:#566059">Wybrane dane trafiają do dostawcy AI razem z pytaniem. Rozmowy zostają tylko na telefonie.</div>
+    <a href="Porady.dc.html" style="min-height:48px;display:flex;align-items:center;font-size:16px;font-weight:600;color:#B04A35;text-decoration:none">Usuń historię czatu</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

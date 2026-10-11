@@ -88,10 +88,10 @@ Future<bool> foodActions(BuildContext context, WidgetRef ref, Food f) async {
           Text(f.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text('${n0(f.kcal100)} kcal/100 g · ${macroText(Macros(p: f.p100, c: f.c100, f: f.f100))}${f.estimated ? ' · ~' : ''}',
-              style: const TextStyle(color: AppColors.muted)),
+              style: TextStyle(color: AppColors.muted)),
           if (f.ingredients.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text('Skład: ${f.ingredients}', maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            Text('Skład: ${f.ingredients}', maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: AppColors.muted)),
           ],
           const SizedBox(height: 14),
           FilledButton.icon(onPressed: () => Navigator.pop(ctx, 'eat'), icon: const Icon(Icons.restaurant), label: const Text('Zjadłem — dodaj do dziennika')),

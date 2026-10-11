@@ -181,7 +181,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
           child: Container(
             width: 110,
             height: 110,
-            decoration: const BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
             child: const Icon(Icons.mic, color: Colors.white, size: 54),
           ),
         ),
@@ -190,9 +190,9 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 20, fontWeight: FontWeight.w600, color: _heard.isEmpty ? AppColors.muted : AppColors.ink)),
-        if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: const TextStyle(color: AppColors.amber))),
+        if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: TextStyle(color: AppColors.amber))),
         const SizedBox(height: 8),
-        const Text('Dotknij mikrofon, gdy skończysz', style: TextStyle(color: AppColors.muted)),
+        Text('Dotknij mikrofon, gdy skończysz', style: TextStyle(color: AppColors.muted)),
         TextButton(onPressed: () { _stt.cancel(); setState(() => _phase = _Phase.typing); }, child: const Text('Wolę wpisać')),
       ];
 
@@ -205,7 +205,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
       ];
 
   List<Widget> _typing() => [
-        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: const TextStyle(color: AppColors.amber))),
+        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: TextStyle(color: AppColors.amber))),
         TextField(
           controller: _text,
           autofocus: true,
@@ -227,7 +227,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
     if (shopped != null) {
       return [
         Row(children: [
-          const Icon(Icons.shopping_cart, color: AppColors.green, size: 28),
+          Icon(Icons.shopping_cart, color: AppColors.green, size: 28),
           const SizedBox(width: 8),
           Expanded(child: Text(shopped.isEmpty ? 'Nie usłyszałem, co kupić' : 'Dodano do zakupów (${shopped.length})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
         ]),
@@ -245,7 +245,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
     final unknown = _saved.where((e) => e.macros.kcal == 0).toList();
     return [
       Row(children: [
-        const Icon(Icons.check_circle, color: AppColors.green, size: 28),
+        Icon(Icons.check_circle, color: AppColors.green, size: 28),
         const SizedBox(width: 8),
         Expanded(child: Text(_saved.isEmpty ? 'Nic nie rozpoznałem' : 'Dodano ${_saved.length} poz. · ${n0(total.kcal)} kcal',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
@@ -262,7 +262,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
               subtitle: Text('${n0(e.grams)} g · ${macroText(e.macros)}'),
               trailing: e.macros.kcal == 0
                   ? TextButton(onPressed: () => _estimateEntry(e), child: const Text('Oszacuj AI'))
-                  : Text('${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: mono(size: 15)),
+                  : Text('${e.estimated ? '~' : ''}${n0(e.macros.kcal)}', style: figure(size: 15)),
             ),
         ]),
       ),
@@ -270,10 +270,10 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
         Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Text('Brak wartości dla: ${unknown.map((e) => e.name).join(', ')}. Dotknij „Oszacuj AI” przy pozycji.',
-              style: const TextStyle(color: AppColors.amberInk, fontSize: 13)),
+              style: TextStyle(color: AppColors.amberInk, fontSize: 13)),
         ),
       if (!_usedAi)
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(top: 6),
           child: Text('Tryb prosty (bez AI) słabo rozumie całe zdania. Podłącz AI w Ja → Dostawca API (np. DeepSeek), a zadziała jak trzeba.',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),

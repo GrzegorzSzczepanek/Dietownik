@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dietownik, Skaner</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#1A2220;font-family:'Figtree',system-ui,sans-serif;color:#FFFFFF;box-sizing:border-box">
+
+  <header style="position:absolute;top:44px;left:8px;right:8px;height:52px;display:flex;align-items:center;justify-content:space-between">
+    <a href="Main.dc.html" aria-label="Zamknij skaner" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"/></svg></a>
+    <div style="font-weight:700;font-size:18px">Skaner</div>
+    <button aria-label="Włącz latarkę" style="width:48px;height:48px;border:0;background:transparent;color:#FFFFFF;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></button>
+  </header>
+
+  <div aria-hidden="true" style="position:absolute;left:35px;top:250px;width:320px;height:200px">
+    <div style="position:absolute;left:0;top:0;width:44px;height:44px;border-left:4px solid #FFFFFF;border-top:4px solid #FFFFFF;border-radius:16px 0 0 0"></div>
+    <div style="position:absolute;right:0;top:0;width:44px;height:44px;border-right:4px solid #FFFFFF;border-top:4px solid #FFFFFF;border-radius:0 16px 0 0"></div>
+    <div style="position:absolute;left:0;bottom:0;width:44px;height:44px;border-left:4px solid #FFFFFF;border-bottom:4px solid #FFFFFF;border-radius:0 0 0 16px"></div>
+    <div style="position:absolute;right:0;bottom:0;width:44px;height:44px;border-right:4px solid #FFFFFF;border-bottom:4px solid #FFFFFF;border-radius:0 0 16px 0"></div>
+  </div>
+
+  <div style="position:absolute;left:20px;right:20px;top:480px;text-align:center;font-size:18px;font-weight:600;line-height:24px">Skieruj aparat na kod kreskowy</div>
+  <div style="position:absolute;left:20px;right:20px;top:512px;text-align:center;font-size:15px;line-height:22px;color:#C2CEC8">Skanuję bez przerwy. Produkty dodasz po kolei, a kod zostanie zapamiętany.</div>
+
+  <div style="position:absolute;left:20px;right:20px;bottom:32px;display:flex;flex-direction:column;gap:4px">
+    <div style="font-size:15px;color:#C2CEC8;text-align:center">Produkt bez kodu?</div>
+    <a href="#" style="margin-top:8px;height:56px;border-radius:16px;background:#FFFFFF;color:#12392C;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;font-size:17px;font-weight:700"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg>Zrób zdjęcie etykiety</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -157,7 +157,7 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
             str.isEnglish
                 ? 'Any OpenAI or Anthropic compatible endpoint supporting images.'
                 : 'Dowolny punkt zgodny z OpenAI lub Anthropic, który przyjmuje obrazy.',
-            style: const TextStyle(color: AppColors.muted),
+            style: TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 14),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -177,7 +177,7 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 [if (cfg.preset.note.isNotEmpty) cfg.preset.note, if (cfg.preset.keyUrl.isNotEmpty) 'Klucz: ${cfg.preset.keyUrl}'].join('\n'),
-                style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w600, height: 1.4),
+                style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w600, height: 1.4),
               ),
             ),
           const SizedBox(height: 18),
@@ -261,7 +261,7 @@ class _ApiProviderState extends ConsumerState<ApiProviderScreen> {
                   : Text(str.testConnection),
             ),
             const SizedBox(width: 12),
-            Expanded(child: Text(str.isEnglish ? 'sends a tiny test image' : 'wysyła malutki obraz testowy', style: const TextStyle(color: AppColors.muted))),
+            Expanded(child: Text(str.isEnglish ? 'sends a tiny test image' : 'wysyła malutki obraz testowy', style: TextStyle(color: AppColors.muted))),
           ]),
           if (_result != null) ...[
             const SizedBox(height: 14),

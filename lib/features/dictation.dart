@@ -67,14 +67,14 @@ class _DictationState extends State<_Dictation> {
             child: Container(
               width: 90,
               height: 90,
-              decoration: const BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
               child: const Icon(Icons.mic, color: Colors.white, size: 44),
             ),
           ),
           const SizedBox(height: 14),
           Text(_heard.isEmpty ? widget.hint : _heard,
               textAlign: TextAlign.center, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
-          if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: const TextStyle(color: AppColors.amber))),
+          if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: TextStyle(color: AppColors.amber))),
         ]),
       );
 }

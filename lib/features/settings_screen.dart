@@ -36,7 +36,7 @@ class SettingsScreen extends ConsumerWidget {
         SectionCard(
           padding: EdgeInsets.zero,
           child: ListTile(
-            title: Text('${n0(goals.kcal)} kcal dziennie', style: mono(size: 18)),
+            title: Text('${n0(goals.kcal)} kcal dziennie', style: figure(size: 18)),
             subtitle: Text('Białko ${n0(goals.p)} g · węgle ${n0(goals.c)} g · tłuszcz ${n0(goals.f)} g'),
             trailing: const Icon(Icons.edit),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsScreen())),
@@ -46,7 +46,7 @@ class SettingsScreen extends ConsumerWidget {
         SectionCard(
           padding: EdgeInsets.zero,
           child: SwitchListTile(
-            secondary: const Icon(Icons.date_range, color: AppColors.green),
+            secondary: Icon(Icons.date_range, color: AppColors.green),
             title: const Text('Cel tygodniowy'),
             subtitle: const Text('Kalorie liczone na cały tydzień. Gorszy dzień się wyrównuje.'),
             value: ref.watch(weeklyModeProvider),
@@ -57,7 +57,7 @@ class SettingsScreen extends ConsumerWidget {
         SectionCard(
           padding: EdgeInsets.zero,
           child: ListTile(
-            leading: const Icon(Icons.monitor_weight_outlined, color: AppColors.green),
+            leading: Icon(Icons.monitor_weight_outlined, color: AppColors.green),
             title: const Text('Waga i trend'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeightScreen())),
@@ -66,7 +66,7 @@ class SettingsScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         const _RemindersCard(),
         const SizedBox(height: 16),
-        const Eyebrow('AI — CO GDZIE DZIAŁA'),
+        const Eyebrow('AI: co gdzie działa'),
         const SizedBox(height: 8),
         SectionCard(
           child: Column(children: [
@@ -79,7 +79,7 @@ class SettingsScreen extends ConsumerWidget {
                 ]),
               ),
             if (!ready)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text('Silnik lokalny nie wystartował na tym telefonie — używaj API.', style: TextStyle(color: AppColors.amberInk)),
               ),
@@ -90,7 +90,7 @@ class SettingsScreen extends ConsumerWidget {
           padding: EdgeInsets.zero,
           child: Column(children: [
             ListTile(
-              leading: const Icon(Icons.memory, color: AppColors.green),
+              leading: Icon(Icons.memory, color: AppColors.green),
               title: const Text('Lokalne AI (modele offline)'),
               subtitle: const Text('Pobierz model raz, potem działa bez internetu'),
               trailing: const Icon(Icons.chevron_right),
@@ -98,7 +98,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.cloud_outlined, color: AppColors.green),
+              leading: Icon(Icons.cloud_outlined, color: AppColors.green),
               title: const Text('Dostawca API'),
               subtitle: Text(ai.api.model.isEmpty ? 'Nie skonfigurowano' : ai.api.model),
               trailing: const Icon(Icons.chevron_right),
@@ -110,7 +110,7 @@ class SettingsScreen extends ConsumerWidget {
         SectionCard(
           padding: EdgeInsets.zero,
           child: ListTile(
-            leading: const Icon(Icons.upload_file, color: AppColors.green),
+            leading: Icon(Icons.upload_file, color: AppColors.green),
             title: const Text('Importuj produkty z CSV'),
             subtitle: const Text('nazwa; marka; kcal; białko; węgle; tłuszcz; porcja g; na (100g/porcja); kod'),
             onTap: () => _importCsv(context, ref),
@@ -121,14 +121,14 @@ class SettingsScreen extends ConsumerWidget {
           padding: EdgeInsets.zero,
           child: Column(children: [
             ListTile(
-              leading: const Icon(Icons.ios_share, color: AppColors.green),
+              leading: Icon(Icons.ios_share, color: AppColors.green),
               title: const Text('Zrób kopię zapasową'),
               subtitle: const Text('Plik JSON z wpisami, przepisami, wagą i produktami'),
               onTap: () => _backup(context, ref),
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.restore, color: AppColors.green),
+              leading: Icon(Icons.restore, color: AppColors.green),
               title: const Text('Przywróć z kopii'),
               subtitle: const Text('Zastąpi wpisy, przepisy i wagę'),
               onTap: () => _restore(context, ref),
@@ -136,7 +136,7 @@ class SettingsScreen extends ConsumerWidget {
           ]),
         ),
         const SizedBox(height: 16),
-        const Text('Dietownik 1.0 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
+        Text('Dietownik 1.0 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
             style: TextStyle(color: AppColors.muted, fontSize: 12)),
       ],
     );
@@ -201,7 +201,7 @@ class _RemindersCard extends ConsumerWidget {
       padding: EdgeInsets.zero,
       child: Column(children: [
         SwitchListTile(
-          secondary: const Icon(Icons.notifications_outlined, color: AppColors.green),
+          secondary: Icon(Icons.notifications_outlined, color: AppColors.green),
           title: const Text('Przypomnienia o posiłkach'),
           subtitle: const Text('Tylko gdy posiłku jeszcze nie zapisałeś'),
           value: prefs.enabled,
@@ -215,7 +215,7 @@ class _RemindersCard extends ConsumerWidget {
             ListTile(
               dense: true,
               title: Text(names[i]),
-              trailing: Text(fmt(prefs.slots[i]), style: mono(size: 16)),
+              trailing: Text(fmt(prefs.slots[i]), style: figure(size: 16)),
               onTap: () async {
                 final t = await showTimePicker(
                     context: context, initialTime: TimeOfDay(hour: prefs.slots[i] ~/ 60, minute: prefs.slots[i] % 60));
@@ -278,7 +278,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Cele dzienne')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        const Eyebrow('POLICZ ZA MNIE'),
+        const Eyebrow('Policz za mnie'),
         const SizedBox(height: 8),
         SegmentedButton<bool>(segments: const [ButtonSegment(value: true, label: Text('Mężczyzna')), ButtonSegment(value: false, label: Text('Kobieta'))], selected: {_male}, onSelectionChanged: (s) => setState(() => _male = s.first)),
         const SizedBox(height: 8),
@@ -310,7 +310,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
         const SizedBox(height: 10),
         OutlinedButton.icon(onPressed: _calc, icon: const Icon(Icons.calculate), label: const Text('Policz kalorie i makro')),
         const SizedBox(height: 20),
-        const Eyebrow('TWOJE CELE'),
+        const Eyebrow('Twoje cele'),
         const SizedBox(height: 8),
         Row(children: [field(_k, 'kcal'), field(_p, 'Białko g'), field(_c, 'Węgle g'), field(_f, 'Tłuszcz g')]),
         const SizedBox(height: 16),

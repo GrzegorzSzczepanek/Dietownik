@@ -108,12 +108,12 @@ class _FridgeScreenState extends ConsumerState<FridgeScreen> {
           const SizedBox(width: 8),
           Expanded(child: OutlinedButton.icon(onPressed: _busy || pantry.isEmpty ? null : _aiIdea, icon: const Icon(Icons.auto_awesome), label: const Text('Pomysł AI'))),
         ]),
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(top: 6, bottom: 12),
           child: Text('Wyniki z sieci to prawdziwe przepisy ze stron. Zgodność liczę ze składników, nie zgaduje jej AI. „Pomysł AI” jest nieweryfikowany.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
         ),
         if (_busy) const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-        if (_note != null) Text(_note!, style: const TextStyle(color: AppColors.amberInk)),
+        if (_note != null) Text(_note!, style: TextStyle(color: AppColors.amberInk)),
         for (final m in _results ?? const <RecipeMatch>[]) _MatchCard(m),
       ]),
     );
@@ -135,7 +135,7 @@ class _MatchCard extends ConsumerWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(child: Text(m.recipe.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800))),
-              Text('$pct%', style: mono(size: 20, color: color)),
+              Text('$pct%', style: figure(size: 20, color: color)),
             ]),
             const SizedBox(height: 6),
             ProgressBar(m.score, color: color, height: 8),
@@ -143,7 +143,7 @@ class _MatchCard extends ConsumerWidget {
             Text('Masz ${m.have.length} z ${m.have.length + m.missing.length} składników', style: const TextStyle(fontWeight: FontWeight.w600)),
             if (m.missing.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text('Brakuje: ${m.missing.join('; ')}', style: const TextStyle(color: AppColors.amberInk, fontSize: 13)),
+              Text('Brakuje: ${m.missing.join('; ')}', style: TextStyle(color: AppColors.amberInk, fontSize: 13)),
             ],
             const SizedBox(height: 6),
             Wrap(spacing: 8, children: [
