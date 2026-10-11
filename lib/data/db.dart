@@ -9,15 +9,17 @@ class AppDb {
 
   static Future<AppDb> open() async {
     final path = p.join(await getDatabasesPath(), 'dietownik.db');
-    final db = await openDatabase(path, version: 3, onUpgrade: (db, o, n) async {
+    final db = await openDatabase(path, version: 4, onUpgrade: (db, o, n) async {
       if (o < 2) await db.execute('ALTER TABLE foods ADD COLUMN ingredients TEXT');
       if (o < 3) await db.execute('CREATE TABLE IF NOT EXISTS weights(day TEXT PRIMARY KEY, kg REAL)');
+      if (o < 4) await db.execute('CREATE TABLE IF NOT EXISTS water(day TEXT PRIMARY KEY, ml INTEGER)');
     }, onCreate: (db, v) async {
       await db.execute('''CREATE TABLE foods(
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, brand TEXT, barcode TEXT,
         kcal100 REAL, p100 REAL, c100 REAL, f100 REAL, serving_g REAL, serving_label TEXT,
         source TEXT, ingredients TEXT, uses INTEGER DEFAULT 0, last_used INTEGER DEFAULT 0)''');
       await db.execute('CREATE TABLE weights(day TEXT PRIMARY KEY, kg REAL)');
+      await db.execute('CREATE TABLE water(day TEXT PRIMARY KEY, ml INTEGER)');
       await db.execute('CREATE INDEX foods_barcode ON foods(barcode)');
       await db.execute('''CREATE TABLE entries(
         id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL, meal INTEGER, name TEXT,
@@ -124,6 +126,33 @@ class AppDb {
 
   Future<void> deleteRecipe(int id) => _db.delete('recipes', where: 'id = ?', whereArgs: [id]);
 
+  // ---- water
+  Future<int> waterFor(String day) async {
+    final r = await _db.query('water', where: 'day = ?', whereArgs: [day], limit: 1);
+    return r.isEmpty ? 0 : (r.first['ml'] as int);
+  }
+
+  Future<void> addWater(String day, int ml) async {
+    final now = await waterFor(day);
+    await _db.insert('water', {'day': day, 'ml': (now + ml).clamp(0, 10000)},
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  /// Per-day totals (kcal, protein, carbs, fat) between two day keys inclusive.
+  Future<Map<String, Macros>> macrosByDay(String from, String to) async {
+    final rows = await _db.rawQuery(
+        'SELECT day, SUM(kcal) k, SUM(p) p, SUM(c) c, SUM(f) f FROM entries WHERE day BETWEEN ? AND ? GROUP BY day',
+        [from, to]);
+    return {
+      for (final r in rows)
+        r['day'] as String: Macros(
+            kcal: (r['k'] as num).toDouble(),
+            p: (r['p'] as num).toDouble(),
+            c: (r['c'] as num).toDouble(),
+            f: (r['f'] as num).toDouble())
+    };
+  }
+
   // ---- weight
   Future<void> setWeight(String day, double kg) =>
       _db.insert('weights', {'day': day, 'kg': kg}, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -143,6 +172,7 @@ class AppDb {
         'entries': await _db.query('entries'),
         'recipes': await _db.query('recipes'),
         'weights': await _db.query('weights'),
+        'water': await _db.query('water'),
       };
 
   /// Replaces entries, recipes and weights; merges foods (the bundled pack stays).
@@ -151,10 +181,10 @@ class AppDb {
     List<Map<String, Object?>> rows(String k) =>
         ((data[k] as List?) ?? const []).map((e) => Map<String, Object?>.from(e as Map)).toList();
     await _db.transaction((txn) async {
-      for (final t in ['entries', 'recipes', 'weights']) {
+      for (final t in ['entries', 'recipes', 'weights', 'water']) {
         await txn.delete(t);
       }
-      for (final t in ['entries', 'recipes', 'weights']) {
+      for (final t in ['entries', 'recipes', 'weights', 'water']) {
         for (final r in rows(t)) {
           await txn.insert(t, r, conflictAlgorithm: ConflictAlgorithm.replace);
         }

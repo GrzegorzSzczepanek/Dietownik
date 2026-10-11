@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -186,6 +188,18 @@ class FoodLogger {
   /// AI failures: falls back to the plain parser so logging always works.
   Future<LogResult> logText(String text, {DateTime? when, int? meal}) async {
     final db = ref.read(dbProvider);
+    final t0 = when ?? DateTime.now();
+    // "śniadanie jak zawsze": a saved set (recipe) named in the sentence wins.
+    final spoken = MealResolver.tokens(text).map(MealResolver.stem).toSet();
+    for (final r in await db.recipes()) {
+      final want = MealResolver.tokens(r.title).map(MealResolver.stem).toSet();
+      if (want.isNotEmpty && r.perServing.kcal > 0 && want.every(spoken.contains)) {
+        final e = Entry(day: dayKey(t0), meal: meal ?? mealForTime(t0), name: r.title, grams: 0, macros: r.perServing);
+        final id = await db.addEntry(e);
+        ref.read(dataVersionProvider.notifier).bump();
+        return LogResult([Entry(id: id, day: e.day, meal: e.meal, name: e.name, grams: 0, macros: e.macros)]);
+      }
+    }
     final ai = await ref.read(aiSettingsProvider.notifier).dietAi();
     var usedAi = false;
     List<ParsedItem> items = const [];
@@ -291,3 +305,80 @@ class RemindersNotifier extends AsyncNotifier<ReminderPrefs> {
 }
 
 final remindersProvider = AsyncNotifierProvider<RemindersNotifier, ReminderPrefs>(RemindersNotifier.new);
+
+// ---- pantry, shopping list, water, weekly mode
+
+class StringListNotifier extends Notifier<List<String>> {
+  StringListNotifier(this.key);
+  final String key;
+  @override
+  List<String> build() {
+    _load();
+    return const [];
+  }
+
+  Future<void> _load() async {
+    final p = await SharedPreferences.getInstance();
+    state = p.getStringList(key) ?? const [];
+  }
+
+  Future<void> _save(List<String> v) async {
+    state = v;
+    final p = await SharedPreferences.getInstance();
+    await p.setStringList(key, v);
+  }
+
+  Future<void> add(Iterable<String> items) async {
+    final v = [...state];
+    for (final i in items.map((e) => e.trim()).where((e) => e.isNotEmpty)) {
+      if (!v.any((x) => x.toLowerCase() == i.toLowerCase())) v.add(i);
+    }
+    await _save(v);
+  }
+
+  Future<void> remove(String item) => _save(state.where((e) => e != item).toList());
+  Future<void> replace(List<String> v) => _save(v);
+}
+
+final pantryProvider = NotifierProvider<StringListNotifier, List<String>>(() => StringListNotifier('pantry'));
+
+/// Shopping items are stored as "0|text" (open) or "1|text" (done).
+final shoppingProvider = NotifierProvider<StringListNotifier, List<String>>(() => StringListNotifier('shopping'));
+
+final braveKeyProvider = FutureProvider<String?>((ref) => const FlutterSecureStorage().read(key: 'brave_key'));
+
+final waterProvider = FutureProvider<int>((ref) async {
+  ref.watch(dataVersionProvider);
+  return ref.read(dbProvider).waterFor(dayKey(ref.watch(selectedDayProvider)));
+});
+
+class WeeklyModeNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    SharedPreferences.getInstance().then((p) => state = p.getBool('weekly_mode') ?? false);
+    return false;
+  }
+
+  Future<void> set(bool v) async {
+    state = v;
+    (await SharedPreferences.getInstance()).setBool('weekly_mode', v);
+  }
+}
+
+final weeklyModeProvider = NotifierProvider<WeeklyModeNotifier, bool>(WeeklyModeNotifier.new);
+
+DateTime weekStart(DateTime d) => DateTime(d.year, d.month, d.day).subtract(Duration(days: d.weekday - 1));
+
+/// kcal eaten Monday..today (the selected day's week).
+final weekEatenProvider = FutureProvider<double>((ref) async {
+  ref.watch(dataVersionProvider);
+  final day = ref.watch(selectedDayProvider);
+  final m = await ref.read(dbProvider).kcalByDay(dayKey(weekStart(day)), dayKey(day));
+  return m.values.fold<double>(0.0, (a, b) => a + b);
+});
+
+final weekMacrosProvider = FutureProvider<Map<String, Macros>>((ref) async {
+  ref.watch(dataVersionProvider);
+  final now = DateTime.now();
+  return ref.read(dbProvider).macrosByDay(dayKey(now.subtract(const Duration(days: 6))), dayKey(now));
+});

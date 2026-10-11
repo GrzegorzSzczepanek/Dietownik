@@ -45,6 +45,17 @@ class SettingsScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         SectionCard(
           padding: EdgeInsets.zero,
+          child: SwitchListTile(
+            secondary: const Icon(Icons.date_range, color: AppColors.green),
+            title: const Text('Cel tygodniowy'),
+            subtitle: const Text('Kalorie liczone na cały tydzień. Gorszy dzień się wyrównuje.'),
+            value: ref.watch(weeklyModeProvider),
+            onChanged: (v) => ref.read(weeklyModeProvider.notifier).set(v),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SectionCard(
+          padding: EdgeInsets.zero,
           child: ListTile(
             leading: const Icon(Icons.monitor_weight_outlined, color: AppColors.green),
             title: const Text('Waga i trend'),

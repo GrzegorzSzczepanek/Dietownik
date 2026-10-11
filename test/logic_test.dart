@@ -9,7 +9,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dietownik/data/food_seed.dart';
 import 'package:dietownik/data/generic_foods.dart';
 
+import 'package:dietownik/services/recipe_search.dart';
+
 void main() {
+  matchTests();
   genericTests();
   csvTests();
   test('fallback parser splits items and reads amounts', () {
@@ -73,5 +76,16 @@ void genericTests() {
   test('generic seed has no duplicate names', () {
     final names = [...genericFoods, ...seedFoods].map((f) => '${f.name}|${f.brand}'.toLowerCase());
     expect(names.toSet().length, names.length);
+  });
+}
+
+void matchTests() {
+  test('recipe match counts pantry coverage and handles inflection', () {
+    const r = Recipe(title: 'x', ingredients: [
+      '4 jajka', '100 g sera żółtego', '2 duże pomidory', '1 łyżka masła', 'sól', '200 g makaronu (opcjonalnie)'
+    ]);
+    final m = matchRecipe(r, ['jajek', 'ser', 'pomidor']);
+    expect(m.missing.length, 1); // masło
+    expect(m.score, closeTo(0.8, 0.01)); // 4 of 5 (sól is a staple, optional skipped)
   });
 }

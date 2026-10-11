@@ -8,6 +8,8 @@ import '../domain/models.dart';
 import '../providers.dart';
 import '../services/recipe_import.dart';
 import 'common.dart';
+import 'fridge_screen.dart';
+import 'shopping_screen.dart';
 import 'widgets.dart';
 
 class RecipesScreen extends ConsumerWidget {
@@ -27,6 +29,12 @@ class RecipesScreen extends ConsumerWidget {
           Expanded(child: _Btn(Icons.edit_note, 'Własny', () => _open(context, const Recipe(title: '')))),
           const SizedBox(width: 8),
           Expanded(child: _Btn(Icons.auto_awesome, 'Pomysł AI', () => _idea(context, ref))),
+        ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: _Btn(Icons.kitchen, 'Co mam w lodówce', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FridgeScreen())))),
+          const SizedBox(width: 8),
+          Expanded(child: _Btn(Icons.shopping_cart_outlined, 'Zakupy', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingScreen())))),
         ]),
         const SizedBox(height: 16),
         if (list.isEmpty)
@@ -235,7 +243,16 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
           TextField(controller: _steps, minLines: 4, maxLines: 16, decoration: const InputDecoration(labelText: 'Kroki', alignLabelWithHint: true)),
           if (widget.initial.sourceUrl.isNotEmpty)
             TextButton.icon(onPressed: () => launchUrl(Uri.parse(widget.initial.sourceUrl), mode: LaunchMode.externalApplication), icon: const Icon(Icons.open_in_new), label: const Text('Otwórz źródło')),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
+          TextButton.icon(
+            onPressed: () {
+              ref.read(shoppingProvider.notifier).add([for (final i in _build().ingredients) '0|$i']);
+              toast(context, 'Składniki dodane do listy zakupów');
+            },
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('Składniki do listy zakupów'),
+          ),
+          const SizedBox(height: 8),
           FilledButton.icon(onPressed: _eat, icon: const Icon(Icons.restaurant), label: const Text('Zjadłem porcję')),
           const SizedBox(height: 8),
           OutlinedButton(onPressed: _save, child: const Text('Zapisz przepis')),

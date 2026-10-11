@@ -11,6 +11,7 @@ import 'advice_screen.dart';
 import 'common.dart';
 import 'food_search_screen.dart';
 import 'scan_screen.dart';
+import 'week_screen.dart';
 import 'widgets.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -47,6 +48,9 @@ class TodayScreen extends ConsumerWidget {
         ]),
         const SizedBox(height: 8),
         _SummaryCard(total: total, goals: goals),
+        const _WeeklyLine(),
+        const SizedBox(height: 10),
+        const _WaterRow(),
         const SizedBox(height: 12),
         Row(children: [
           Expanded(
@@ -76,6 +80,70 @@ class TodayScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         const _WeekStrip(),
       ],
+    );
+  }
+}
+
+class _WeeklyLine extends ConsumerWidget {
+  const _WeeklyLine();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(weeklyModeProvider)) return const SizedBox.shrink();
+    final goals = ref.watch(goalsProvider);
+    final eaten = ref.watch(weekEatenProvider).value ?? 0;
+    final day = ref.watch(selectedDayProvider);
+    final daysLeft = 7 - (day.weekday - 1); // including this day
+    final left = goals.kcal * 7 - eaten;
+    final perDay = left / daysLeft;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: SectionCard(
+        padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          const Icon(Icons.date_range, color: AppColors.green),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              left >= 0
+                  ? 'Tydzień: zostało ${n0(left)} kcal, czyli ok. ${n0(perDay)} na dzień do niedzieli.'
+                  : 'Tydzień: ${n0(-left)} kcal ponad. Spokojnie, kolejne dni to wyrównają.',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _WaterRow extends ConsumerWidget {
+  const _WaterRow();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ml = ref.watch(waterProvider).value ?? 0;
+    const goal = 2000;
+    Future<void> add(int v) async {
+      await ref.read(dbProvider).addWater(dayKey(ref.read(selectedDayProvider)), v);
+      ref.read(dataVersionProvider.notifier).bump();
+    }
+
+    return SectionCard(
+      padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+      child: Row(children: [
+        const Icon(Icons.water_drop_outlined, color: AppColors.blue),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Woda  $ml / $goal ml', style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            ProgressBar(ml / goal, color: AppColors.blue, height: 7),
+          ]),
+        ),
+        const SizedBox(width: 8),
+        ActionChip(label: const Text('+250'), onPressed: () => add(250)),
+        const SizedBox(width: 4),
+        IconButton(onPressed: ml > 0 ? () => add(-250) : null, icon: const Icon(Icons.undo, size: 20)),
+      ]),
     );
   }
 }
@@ -268,14 +336,53 @@ class _MealSection extends ConsumerWidget {
       child: SectionCard(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Eyebrow(mealNames[meal].toUpperCase()),
-            Text('${n0(kcal)} kcal', style: mono(size: 14)),
-          ]),
+          InkWell(
+            onLongPress: () => _saveSet(context, ref),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Eyebrow(mealNames[meal].toUpperCase()),
+              Row(children: [
+                Text('${n0(kcal)} kcal', style: mono(size: 14)),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Zapisz jako zestaw',
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 20, color: AppColors.muted),
+                  onPressed: () => _saveSet(context, ref),
+                ),
+              ]),
+            ]),
+          ),
           for (final e in entries) _EntryTile(e),
         ]),
       ),
     );
+  }
+}
+
+extension on _MealSection {
+  /// Saves the meal as a one-portion recipe so "śniadanie jak zawsze" works by voice.
+  Future<void> _saveSet(BuildContext context, WidgetRef ref) async {
+    final ctrl = TextEditingController(text: mealNames[meal].toLowerCase());
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Zapisz jako zestaw'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: ctrl, autofocus: true, decoration: const InputDecoration(labelText: 'Nazwa, którą powiesz')),
+          const SizedBox(height: 8),
+          const Text('Potem wystarczy powiedzieć tę nazwę do mikrofonu.', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Anuluj')),
+          FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(100, 44)), onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('Zapisz')),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty) return;
+    final total = entries.fold(Macros.zero, (a, e) => a + e.macros);
+    await ref.read(dbProvider).saveRecipe(Recipe(
+        title: name, ingredients: [for (final e in entries) '${e.name} ${n0(e.grams)} g'], perServing: total));
+    ref.read(dataVersionProvider.notifier).bump();
+    if (context.mounted) toast(context, 'Zapisano zestaw „$name”. Powiedz: „$name”.');
   }
 }
 
@@ -352,9 +459,11 @@ class _WeekStrip extends ConsumerWidget {
       3 || 4 => 'Masz $n z 7 dni. Fajnie idzie.',
       _ => 'Masz $n z 7 dni. Super konsekwencja!',
     };
-    return SectionCard(
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeekScreen())),
+      child: SectionCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Eyebrow('OSTATNIE 7 DNI'),
+        const Eyebrow('OSTATNIE 7 DNI  ·  szczegóły ›'),
         const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           for (final d in days)
@@ -381,6 +490,6 @@ class _WeekStrip extends ConsumerWidget {
         const SizedBox(height: 10),
         Text(msg, style: const TextStyle(color: AppColors.muted)),
       ]),
-    );
+    ));
   }
 }

@@ -23,6 +23,7 @@ const _prompts = [
   'Mam ochotę na słodkie — co zamiast?',
   'Jak nie podjadać wieczorem?',
   'Plan jedzenia na jutro pod moje kalorie',
+  'Podsumuj mój tydzień',
 ];
 
 class AdviceScreen extends ConsumerStatefulWidget {
@@ -49,7 +50,11 @@ class _AdviceScreenState extends ConsumerState<AdviceScreen> {
     final entries = await ref.read(dbProvider).entriesFor(dayKey(DateTime.now()));
     final t = entries.fold(Macros.zero, (a, e) => a + e.macros);
     final hour = DateTime.now().hour;
-    return 'Godzina: $hour:00. Cel dzienny: ${n0(goals.kcal)} kcal, B ${n0(goals.p)} g, W ${n0(goals.c)} g, T ${n0(goals.f)} g.\n'
+    final wk = await ref.read(dbProvider).macrosByDay(dayKey(DateTime.now().subtract(const Duration(days: 6))), dayKey(DateTime.now()));
+    final wkLine = wk.isEmpty
+        ? 'Ostatnie 7 dni: brak wpisów.'
+        : 'Ostatnie 7 dni (kcal/dzień z wpisów): ${wk.entries.map((e) => '${e.key}: ${n0(e.value.kcal)}').join(', ')}.';
+    return '$wkLine\nGodzina: $hour:00. Cel dzienny: ${n0(goals.kcal)} kcal, B ${n0(goals.p)} g, W ${n0(goals.c)} g, T ${n0(goals.f)} g.\n'
         'Zjedzone dziś: ${n0(t.kcal)} kcal, B ${n0(t.p)}, W ${n0(t.c)}, T ${n0(t.f)}. '
         'Zostało: ${n0(goals.kcal - t.kcal)} kcal, B ${n0(goals.p - t.p)} g.\n'
         'Zjedzone: ${entries.map((e) => e.name).join(', ')}';
