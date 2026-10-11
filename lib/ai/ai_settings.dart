@@ -38,7 +38,7 @@ class ApiPreset {
 
 const apiPresets = [
   ApiPreset('deepseek', 'DeepSeek', ApiFormat.openai, 'https://api.deepseek.com',
-      model: 'deepseek-chat',
+      model: 'deepseek-v4-flash',
       visionModel: 'deepseek-v4-flash-vision-exp',
       keyUrl: 'platform.deepseek.com',
       note: 'Najtańszy. Obraz w trybie eksperymentalnym — jeśli słabo czyta etykiety, zmień model obrazu.'),

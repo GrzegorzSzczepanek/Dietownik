@@ -97,3 +97,17 @@ wersja angielska, wersja release z własnym podpisem.
 - Przycisk skanera nachodzi na pierwszy dzień paska 7 dni.
 - Domyślna ikona i ekran startowy Fluttera.
 - Hierarchia ekranu Dziś jest gęsta: rozważyć, co zostaje nad linią zgięcia.
+
+## Zrzuty ekranu (docs/screens/)
+01 Dziś (pusty) · 02 mikrofon: słucham · 03 mikrofon: pisanie · 04 mikrofon: podsumowanie ·
+05–06 Dziś z wpisami · 07 Przepisy · 08 Porady · 09–10, 15 Ja · 11 Co mam w lodówce ·
+12 Zakupy · 13 Szukaj · 14 Skaner.
+
+## Problemy widoczne na zrzutach
+- Skaner: tytuł „Skaner" jest czarny na czarnym pasku (nieczytelny).
+- Ekran Dziś: baner „Podłącz AI" zajmuje za dużo miejsca, pierścień kalorii jest dopiero pod nim.
+- Szukaj: lista to zwykły tekst bez porcji do tapnięcia i bez ikon. Daleko do wygody Fitatu.
+- Ja: długi, płaski ekran bez grupowania (cele, AI, dane); przełączniki „Lokalnie/API" są zbyt duże.
+- Arkusz mikrofonu na szerokich ekranach nie rozciąga się na całą szerokość.
+- Skaner zasłania pierwsze elementy treści w lewym dolnym rogu.
+- Brak ikony aplikacji i ekranu powitalnego, domyślny motyw jasny only.
