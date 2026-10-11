@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai/chat_ai.dart';
+import 'ai/usage.dart';
 import 'domain/models.dart';
 import 'providers.dart';
 
@@ -170,6 +171,8 @@ class ChatController extends Notifier<ChatState> {
       final ChatReply reply;
       if (!ai.canChat) {
         reply = const ChatReply(answer: 'Do rozmowy potrzebuję AI. Wejdź w Ja → Dostawca API (np. DeepSeek) i wklej klucz. To zajmie minutę.');
+      } else if (await AiUsage.overLimit()) {
+        reply = const ChatReply(answer: 'Osiągnięty jest miesięczny limit AI. Zapisywanie posiłków dalej działa. Limit zmienisz w Ja → Zużycie AI.');
       } else {
         final hist = [
           for (final m in state.current.reversed.skip(1).take(6).toList().reversed) {'role': m.role, 'text': m.text}

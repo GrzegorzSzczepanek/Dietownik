@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme.dart';
+import 'features/onboarding_screen.dart';
 import 'features/shell.dart';
 import 'providers.dart';
 
@@ -35,7 +36,7 @@ class _DietownikAppState extends ConsumerState<DietownikApp> {
         AppColors.setBrightness(b);
         return KeyedSubtree(key: ValueKey(b), child: child!);
       },
-      home: const Shell(),
+      home: ref.watch(onboardedProvider) ? const Shell() : const OnboardingScreen(),
     );
   }
 }

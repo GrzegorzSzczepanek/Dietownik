@@ -9,10 +9,11 @@ class AppDb {
 
   static Future<AppDb> open() async {
     final path = p.join(await getDatabasesPath(), 'dietownik.db');
-    final db = await openDatabase(path, version: 5, onUpgrade: (db, o, n) async {
+    final db = await openDatabase(path, version: 6, onUpgrade: (db, o, n) async {
       if (o < 2) await db.execute('ALTER TABLE foods ADD COLUMN ingredients TEXT');
       if (o < 3) await db.execute('CREATE TABLE IF NOT EXISTS weights(day TEXT PRIMARY KEY, kg REAL)');
       if (o < 4) await db.execute('CREATE TABLE IF NOT EXISTS water(day TEXT PRIMARY KEY, ml INTEGER)');
+      if (o < 6) await db.execute('CREATE TABLE IF NOT EXISTS day_flags(day TEXT PRIMARY KEY, skip INTEGER)');
       if (o < 5) await db.execute('CREATE TABLE IF NOT EXISTS chat(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, role TEXT, text TEXT, meta TEXT)');
     }, onCreate: (db, v) async {
       await db.execute('''CREATE TABLE foods(
@@ -21,6 +22,7 @@ class AppDb {
         source TEXT, ingredients TEXT, uses INTEGER DEFAULT 0, last_used INTEGER DEFAULT 0)''');
       await db.execute('CREATE TABLE weights(day TEXT PRIMARY KEY, kg REAL)');
       await db.execute('CREATE TABLE water(day TEXT PRIMARY KEY, ml INTEGER)');
+      await db.execute('CREATE TABLE day_flags(day TEXT PRIMARY KEY, skip INTEGER)');
       await db.execute('CREATE TABLE chat(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, role TEXT, text TEXT, meta TEXT)');
       await db.execute('CREATE INDEX foods_barcode ON foods(barcode)');
       await db.execute('''CREATE TABLE entries(
@@ -50,13 +52,14 @@ class AppDb {
 
   /// Distinct days that have at least one entry, newest first.
   Future<Set<String>> loggedDays({int limit = 400}) async => (await _db.rawQuery(
-          'SELECT DISTINCT day FROM entries ORDER BY day DESC LIMIT ?', [limit]))
+          'SELECT DISTINCT day FROM entries WHERE day NOT IN (SELECT day FROM day_flags WHERE skip = 1) ORDER BY day DESC LIMIT ?', [limit]))
       .map((r) => r['day'] as String)
       .toSet();
 
   Future<Map<String, double>> kcalByDay(String from, String to) async {
     final rows = await _db.rawQuery(
-        'SELECT day, SUM(kcal) k FROM entries WHERE day BETWEEN ? AND ? GROUP BY day', [from, to]);
+        'SELECT day, SUM(kcal) k FROM entries WHERE day BETWEEN ? AND ? AND day NOT IN (SELECT day FROM day_flags WHERE skip = 1) GROUP BY day',
+        [from, to]);
     return {for (final r in rows) r['day'] as String: (r['k'] as num).toDouble()};
   }
 
@@ -142,6 +145,28 @@ class AppDb {
 
   Future<void> deleteRecipe(int id) => _db.delete('recipes', where: 'id = ?', whereArgs: [id]);
 
+  // ---- "dziś nie liczę"
+  Future<bool> isSkipDay(String day) async =>
+      (await _db.query('day_flags', where: 'day = ? AND skip = 1', whereArgs: [day], limit: 1)).isNotEmpty;
+
+  Future<void> setSkipDay(String day, bool skip) => skip
+      ? _db.insert('day_flags', {'day': day, 'skip': 1}, conflictAlgorithm: ConflictAlgorithm.replace)
+      : _db.delete('day_flags', where: 'day = ?', whereArgs: [day]);
+
+  Future<Set<String>> skipDays() async =>
+      (await _db.query('day_flags', where: 'skip = 1')).map((r) => r['day'] as String).toSet();
+
+  // ---- entry edits
+  Future<void> moveEntry(int id, String day, int meal) =>
+      _db.update('entries', {'day': day, 'meal': meal}, where: 'id = ?', whereArgs: [id]);
+
+  /// A user correction beats any imported value: replaces same name+brand and ranks first in search.
+  Future<void> saveCorrectedFood(Food f) async {
+    await _db.delete('foods',
+        where: 'LOWER(name) = ? AND LOWER(IFNULL(brand, "")) = ?', whereArgs: [f.name.toLowerCase(), f.brand.toLowerCase()]);
+    await _db.insert('foods', {...f.toMap(), 'uses': 999, 'last_used': DateTime.now().millisecondsSinceEpoch});
+  }
+
   // ---- chat (stays on the phone)
   Future<List<Map<String, Object?>>> chatRows() => _db.query('chat', orderBy: 'id');
 
@@ -169,7 +194,7 @@ class AppDb {
   /// Per-day totals (kcal, protein, carbs, fat) between two day keys inclusive.
   Future<Map<String, Macros>> macrosByDay(String from, String to) async {
     final rows = await _db.rawQuery(
-        'SELECT day, SUM(kcal) k, SUM(p) p, SUM(c) c, SUM(f) f FROM entries WHERE day BETWEEN ? AND ? GROUP BY day',
+        'SELECT day, SUM(kcal) k, SUM(p) p, SUM(c) c, SUM(f) f FROM entries WHERE day BETWEEN ? AND ? AND day NOT IN (SELECT day FROM day_flags WHERE skip = 1) GROUP BY day',
         [from, to]);
     return {
       for (final r in rows)
@@ -201,6 +226,7 @@ class AppDb {
         'recipes': await _db.query('recipes'),
         'weights': await _db.query('weights'),
         'water': await _db.query('water'),
+        'day_flags': await _db.query('day_flags'),
       };
 
   /// Replaces entries, recipes and weights; merges foods (the bundled pack stays).
@@ -209,10 +235,10 @@ class AppDb {
     List<Map<String, Object?>> rows(String k) =>
         ((data[k] as List?) ?? const []).map((e) => Map<String, Object?>.from(e as Map)).toList();
     await _db.transaction((txn) async {
-      for (final t in ['entries', 'recipes', 'weights', 'water']) {
+      for (final t in ['entries', 'recipes', 'weights', 'water', 'day_flags']) {
         await txn.delete(t);
       }
-      for (final t in ['entries', 'recipes', 'weights', 'water']) {
+      for (final t in ['entries', 'recipes', 'weights', 'water', 'day_flags']) {
         for (final r in rows(t)) {
           await txn.insert(t, r, conflictAlgorithm: ConflictAlgorithm.replace);
         }

@@ -21,6 +21,7 @@ Future<void> main() async {
   await seedFoodsOnce(db);
   final settings = await AiSettingsStore().load();
   final goals = await GoalsNotifier.load();
+  final onboarded = (await SharedPreferences.getInstance()).getBool('onboarded') ?? false;
   // The big product pack loads in the background so first launch stays fast.
   unawaited(loadOffPackOnce(db));
   final container = ProviderContainer(
@@ -28,6 +29,7 @@ Future<void> main() async {
       dbProvider.overrideWithValue(db),
       initialAiSettingsProvider.overrideWithValue(settings),
       initialGoalsProvider.overrideWithValue(goals),
+      initialOnboardedProvider.overrideWithValue(onboarded),
     ],
   );
   // On-device model engine starts in the background; the UI does not wait for it.

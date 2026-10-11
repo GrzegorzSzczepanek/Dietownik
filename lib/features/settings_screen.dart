@@ -13,6 +13,7 @@ import '../domain/csv_import.dart';
 import '../domain/models.dart';
 import '../notifications/reminders.dart';
 import '../providers.dart';
+import 'usage_screen.dart';
 import 'weight_screen.dart';
 import 'api_provider_screen.dart';
 import 'common.dart';
@@ -138,6 +139,12 @@ class SettingsScreen extends ConsumerWidget {
           ),
           NavRow(
             minHeight: 60,
+            title: 'Zużycie AI',
+            subtitle: 'Szacunkowy koszt w tym miesiącu',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UsageScreen())),
+          ),
+          NavRow(
+            minHeight: 60,
             title: 'Modele na telefonie',
             subtitle: 'Pobierz raz, potem działają bez internetu',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LocalModelsScreen())),
@@ -171,10 +178,12 @@ Future<void> _backup(BuildContext context, WidgetRef ref) async {
   }
 }
 
-Future<void> _restore(BuildContext context, WidgetRef ref) async {
+Future<bool> restoreBackup(BuildContext context, WidgetRef ref) => _restore(context, ref);
+
+Future<bool> _restore(BuildContext context, WidgetRef ref) async {
   final pick = await FilePicker.pickFiles(type: FileType.any);
   final path = pick.isEmpty ? null : pick.first.path;
-  if (path == null || !context.mounted) return;
+  if (path == null || !context.mounted) return false;
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -186,7 +195,7 @@ Future<void> _restore(BuildContext context, WidgetRef ref) async {
       ],
     ),
   );
-  if (ok != true) return;
+  if (ok != true) return false;
   try {
     final data = jsonDecode(await File(path).readAsString()) as Map<String, dynamic>;
     await ref.read(dbProvider).importAll(data);
@@ -197,8 +206,10 @@ Future<void> _restore(BuildContext context, WidgetRef ref) async {
     }
     ref.read(dataVersionProvider.notifier).bump();
     if (context.mounted) toast(context, 'Przywrócono kopię.');
+    return true;
   } catch (e) {
     if (context.mounted) toast(context, 'Nie udało się przywrócić: $e');
+    return false;
   }
 }
 

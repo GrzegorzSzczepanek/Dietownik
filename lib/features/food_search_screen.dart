@@ -9,6 +9,7 @@ import '../domain/models.dart';
 import '../providers.dart';
 import 'common.dart';
 import 'label_flow.dart';
+import 'oko_screen.dart';
 import 'scan_screen.dart';
 
 class FoodSearchScreen extends ConsumerStatefulWidget {
@@ -222,6 +223,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                   _link('Zeskanuj kod', () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ScanScreen()))),
                   _link('Oszacuj z AI', _estimate),
                   _link('Zdjęcie etykiety', () async { await scanLabelFlow(context, ref); if (mounted) Navigator.pop(context); }),
+                  _link('Wpis na oko', () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => OkoScreen(initialMeal: _meal)))),
                   _link('Dodaj własny', () => _custom(_q.text.trim())),
                 ]),
               ),

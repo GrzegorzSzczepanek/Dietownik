@@ -9,6 +9,7 @@ import '../domain/models.dart';
 import '../providers.dart';
 import 'chat_access_screen.dart';
 import 'common.dart';
+import 'state_screens.dart';
 import 'widgets.dart';
 
 const _starters = [
@@ -41,6 +42,11 @@ class _AdviceScreenState extends ConsumerState<AdviceScreen> {
   Future<void> _send([String? text]) async {
     final q = (text ?? _input.text).trim();
     if (q.isEmpty) return;
+    final ai = await ref.read(aiSettingsProvider.notifier).dietAi();
+    if (!ai.canChat) {
+      if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const AiKeyScreen()));
+      return;
+    }
     _input.clear();
     final f = ref.read(chatProvider.notifier).send(q);
     _toBottom();

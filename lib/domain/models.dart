@@ -196,6 +196,14 @@ class Goals {
   Goals copyWith({double? kcal, double? p, double? c, double? f}) =>
       Goals(kcal: kcal ?? this.kcal, p: p ?? this.p, c: c ?? this.c, f: f ?? this.f);
 
+  /// Macros from calories only (no body data): 30% protein, 45% carbs, 25% fat by energy.
+  static Goals fromKcal(double kcal) => Goals(
+        kcal: kcal,
+        p: (kcal * 0.30 / 4).roundToDouble(),
+        c: (kcal * 0.45 / 4).roundToDouble(),
+        f: (kcal * 0.25 / 9).roundToDouble(),
+      );
+
   /// Mifflin-St Jeor + activity factor; macros split 30/45/25 (P/C/F by kcal),
   /// protein floored at 1.6 g/kg.
   static Goals calculate({

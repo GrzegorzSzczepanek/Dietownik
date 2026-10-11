@@ -20,7 +20,7 @@ extension AiTaskLabel on AiTask {
 
 class ApiPreset {
   const ApiPreset(this.id, this.label, this.format, this.baseUrl,
-      {this.needsKey = true, this.model = '', this.visionModel = '', this.keyUrl = '', this.note = ''});
+      {this.needsKey = true, this.model = '', this.visionModel = '', this.keyUrl = '', this.note = '', this.price = 0.5});
   final String id;
   final String label;
   final ApiFormat format;
@@ -34,6 +34,9 @@ class ApiPreset {
   final String visionModel;
   final String keyUrl;
   final String note;
+
+  /// Rough blended USD per 1M tokens (input and output averaged). Used only for the usage estimate.
+  final double price;
 }
 
 const apiPresets = [
@@ -41,24 +44,25 @@ const apiPresets = [
       model: 'deepseek-v4-flash',
       visionModel: 'deepseek-v4-flash-vision-exp',
       keyUrl: 'platform.deepseek.com',
-      note: 'Najtańszy. Obraz w trybie eksperymentalnym — jeśli słabo czyta etykiety, zmień model obrazu.'),
+      note: 'Najtańszy. Obraz w trybie eksperymentalnym — jeśli słabo czyta etykiety, zmień model obrazu.', price: 0.2),
   ApiPreset('gemini', 'Gemini', ApiFormat.openai, 'https://generativelanguage.googleapis.com/v1beta/openai',
-      model: 'gemini-2.5-flash', keyUrl: 'aistudio.google.com/apikey', note: 'Darmowy limit, dobry obraz.'),
+      model: 'gemini-2.5-flash', keyUrl: 'aistudio.google.com/apikey', note: 'Darmowy limit, dobry obraz.', price: 0.5),
   ApiPreset('openai', 'OpenAI', ApiFormat.openai, 'https://api.openai.com/v1',
-      model: 'gpt-4o-mini', keyUrl: 'platform.openai.com/api-keys'),
+      model: 'gpt-4o-mini', keyUrl: 'platform.openai.com/api-keys', price: 0.4),
   ApiPreset('anthropic', 'Anthropic', ApiFormat.anthropic, 'https://api.anthropic.com',
-      model: 'claude-haiku-5-5', keyUrl: 'console.anthropic.com', note: 'Bardzo dobry odczyt etykiet.'),
+      model: 'claude-haiku-5-5', keyUrl: 'console.anthropic.com', note: 'Bardzo dobry odczyt etykiet.', price: 2.0),
   ApiPreset('groq', 'Groq', ApiFormat.openai, 'https://api.groq.com/openai/v1',
       model: 'llama-3.3-70b-versatile',
       visionModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
       keyUrl: 'console.groq.com/keys',
-      note: 'Bardzo szybki, darmowy limit.'),
+      note: 'Bardzo szybki, darmowy limit.', price: 0.2),
   ApiPreset('mistral', 'Mistral', ApiFormat.openai, 'https://api.mistral.ai/v1',
-      model: 'mistral-small-latest', keyUrl: 'console.mistral.ai'),
+      model: 'mistral-small-latest', keyUrl: 'console.mistral.ai', price: 0.3),
   ApiPreset('openrouter', 'OpenRouter', ApiFormat.openai, 'https://openrouter.ai/api/v1',
-      model: 'google/gemini-2.5-flash', keyUrl: 'openrouter.ai/keys', note: 'Jeden klucz do wielu modeli.'),
+      model: 'google/gemini-2.5-flash', keyUrl: 'openrouter.ai/keys', note: 'Jeden klucz do wielu modeli.', price: 0.5),
   ApiPreset('ollama', 'Ollama (LAN)', ApiFormat.openai, 'http://localhost:11434/v1',
       needsKey: false,
+      price: 0,
       model: 'llama3.2',
       visionModel: 'llama3.2-vision',
       note: 'Model na Twoim komputerze. Z telefonu podaj adres IP komputera zamiast localhost.'),

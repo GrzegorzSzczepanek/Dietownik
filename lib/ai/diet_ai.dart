@@ -32,23 +32,23 @@ class DietAi {
   final AiSettings settings;
   final LlmApi? llm;
   final LocalRuntime local;
-  final Future<void> Function(int)? onTokens;
+  final Future<void> Function(int tokens, String cat)? onTokens;
 
   bool canRun(AiTask t) => settings.engineFor(t) == AiEngine.api ? llm != null : local.isReady;
 
-  Future<String> _run(AiTask t, String system, String user, {bool json = false, Uint8List? image}) async {
+  Future<String> _run(AiTask t, String system, String user, {bool json = false, Uint8List? image, String cat = 'zapisy'}) async {
     if (settings.engineFor(t) == AiEngine.api) {
       final api = llm;
       if (api == null) throw LlmException('Dostawca API nie jest skonfigurowany.');
       final r = await api.complete(system: system, user: user, image: image, json: json, maxTokens: 1500);
-      await onTokens?.call(r.totalTokens);
+      await onTokens?.call(r.totalTokens, cat);
       return r.text;
     }
     return local.generate(system: system, user: user, image: image, json: json);
   }
 
   /// Raw model call for the chat (task: advice), JSON mode on.
-  Future<String> runChat(String system, String user) => _run(AiTask.advice, system, user, json: true);
+  Future<String> runChat(String system, String user) => _run(AiTask.advice, system, user, json: true, cat: 'czat');
 
   bool get canChat => canRun(AiTask.advice);
 
@@ -129,7 +129,7 @@ Zwróć WYŁĄCZNIE JSON: {"kcal":n,"p":n,"c":n,"f":n} (p=białko, c=węglowodan
 
   Future<Macros> recipeMacros(String title, int servings, List<String> ingredients) async {
     final user = 'Przepis: $title\nLiczba porcji: $servings\nSkładniki:\n${ingredients.join('\n')}';
-    final j = extractJson(await _run(AiTask.estimation, _recipePrompt, user, json: true)) as Map;
+    final j = extractJson(await _run(AiTask.estimation, _recipePrompt, user, json: true, cat: 'przepisy')) as Map;
     return Macros(
         kcal: _d(j['kcal']) ?? 0, p: _d(j['p']) ?? 0, c: _d(j['c']) ?? 0, f: _d(j['f']) ?? 0);
   }
@@ -140,7 +140,7 @@ Odpowiadaj po polsku, krótko (maks. ~120 słów), konkretnie, bez moralizowania
 Proponuj proste rzeczy: mało składników, mało zmywania, szybkie. Gdy proponujesz posiłek, podaj orientacyjne kcal i białko.''';
 
   Future<String> advise(String question, String context) =>
-      _run(AiTask.advice, _advicePrompt, 'Kontekst dnia:\n$context\n\nPytanie: $question');
+      _run(AiTask.advice, _advicePrompt, 'Kontekst dnia:\n$context\n\nPytanie: $question', cat: 'czat');
 
   static const _ideaPrompt = '''
 Wymyśl JEDEN prosty przepis (maks. 6 składników, do 20 minut) spełniający wymagania użytkownika.
@@ -148,7 +148,7 @@ Zwróć WYŁĄCZNIE JSON: {"title":"","servings":1,"ingredients":["200 g ..."],"
 kcal/p/c/f dotyczą jednej porcji. Po polsku. Bez komentarzy.''';
 
   Future<Recipe> recipeIdea(String request) async {
-    final j = extractJson(await _run(AiTask.advice, _ideaPrompt, request, json: true)) as Map;
+    final j = extractJson(await _run(AiTask.advice, _ideaPrompt, request, json: true, cat: 'przepisy')) as Map;
     final steps = (j['steps'] as List? ?? const []).map((e) => '$e').toList();
     return Recipe(
       title: '${j['title'] ?? 'Pomysł'}',

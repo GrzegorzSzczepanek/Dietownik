@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai/ai_settings.dart';
+import 'ai/usage.dart';
 import 'ai/diet_ai.dart';
 import 'ai/edge_runtime.dart';
 import 'ai/embeddings.dart';
@@ -72,8 +73,9 @@ class AiSettingsController extends Notifier<AiSettings> {
   Future<String?> readKey() => _store.readKey();
   Future<void> writeKey(String? k) => _store.writeKey(k);
 
-  Future<void> addTokens(int n) async {
+  Future<void> addTokens(int n, [String cat = 'zapisy']) async {
     await _store.addTokens(n);
+    await AiUsage.add(cat, n, state.api.preset.price);
     state = state.copyWith(monthlyTokens: state.monthlyTokens + n);
   }
 
@@ -389,3 +391,30 @@ final weekMacrosProvider = FutureProvider<Map<String, Macros>>((ref) async {
   final now = DateTime.now();
   return ref.read(dbProvider).macrosByDay(dayKey(now.subtract(const Duration(days: 6))), dayKey(now));
 });
+
+final skipDayProvider = FutureProvider<bool>((ref) async {
+  ref.watch(dataVersionProvider);
+  return ref.read(dbProvider).isSkipDay(dayKey(ref.watch(selectedDayProvider)));
+});
+
+final skipDaysProvider = FutureProvider<Set<String>>((ref) async {
+  ref.watch(dataVersionProvider);
+  return ref.read(dbProvider).skipDays();
+});
+
+/// Whether the first-run flow was completed (set from prefs in main()).
+final initialOnboardedProvider = Provider<bool>((ref) => true);
+
+class OnboardedNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(initialOnboardedProvider);
+  Future<void> done() async {
+    state = true;
+    (await SharedPreferences.getInstance()).setBool('onboarded', true);
+  }
+}
+
+final onboardedProvider = NotifierProvider<OnboardedNotifier, bool>(OnboardedNotifier.new);
+
+/// Recipe links saved while offline, imported later from Przepisy.
+final pendingLinksProvider = NotifierProvider<StringListNotifier, List<String>>(() => StringListNotifier('pending_links'));

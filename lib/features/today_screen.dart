@@ -10,9 +10,12 @@ import '../domain/models.dart';
 import '../providers.dart';
 import 'api_provider_screen.dart';
 import 'common.dart';
+import 'edit_entry_sheet.dart';
+import 'voice_sheet.dart';
 import 'food_search_screen.dart';
 import 'scan_screen.dart';
 import 'week_screen.dart';
+import 'widgets.dart';
 
 /// Dziś, per design/Main, Dzis-pusty and Dzis-przewiniete: a hero zone with
 /// one big number that collapses to a compact bar, then flat, line-separated lists.
@@ -22,11 +25,56 @@ class TodayScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final day = ref.watch(selectedDayProvider);
-    final entries = ref.watch(dayEntriesProvider).value ?? const <Entry>[];
+    final entries = ref.watch(dayEntriesProvider).value ?? <Entry>[];
     final goals = ref.watch(goalsProvider);
     final total = entries.fold(Macros.zero, (a, e) => a + e.macros);
     final top = MediaQuery.of(context).padding.top;
     final bottom = 84 + MediaQuery.of(context).padding.bottom + 40;
+    final skip = ref.watch(skipDayProvider).value ?? false;
+
+    if (skip) {
+      return ListView(padding: EdgeInsets.only(bottom: bottom), children: [
+        HeroZone(
+          bottom: 28,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(height: 52, child: Align(alignment: Alignment.centerLeft, child: Text(DateFormat('EEEE, d MMMM', 'pl').format(day), style: fig(15, color: AppColors.text3)))),
+            SizedBox(height: 8),
+            Text('Dziś odpoczywasz od liczenia.', style: display(40, height: 44 / 40)),
+            SizedBox(height: 12),
+            Text('Ten dzień nie wlicza się do średnich ani serii. Nic nie przepada.', style: fig(17, color: AppColors.text3, height: 26 / 17)),
+          ]),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            NavRow(
+              topLine: false,
+              bold: true,
+              minHeight: 72,
+              title: 'Jednak zapiszę coś',
+              subtitle: 'Wpisy zostaną w historii, ale bez celu',
+              leading: Icon(Icons.mic_none, color: AppColors.accent),
+              onTap: () => showVoiceSheet(context),
+            ),
+            NavRow(
+              bold: true,
+              minHeight: 72,
+              bottomLine: true,
+              title: 'Wróć do liczenia',
+              subtitle: 'Cel ${n0(goals.kcal)} kcal znów działa',
+              leading: Icon(Icons.replay, color: AppColors.accent),
+              onTap: () async {
+                await ref.read(dbProvider).setSkipDay(dayKey(day), false);
+                ref.read(dataVersionProvider.notifier).bump();
+              },
+            ),
+            for (var m = 0; m < 4; m++) _MealSection(meal: m, entries: [for (final e in entries) if (e.meal == m) e]),
+            const SizedBox(height: 24),
+            const _WeekStrip(),
+          ]),
+        ),
+      ]);
+    }
 
     return CustomScrollView(slivers: [
       SliverPersistentHeader(pinned: true, delegate: _HeroDelegate(top: top, total: total, goals: goals, day: day, ref: ref)),
@@ -35,15 +83,26 @@ class TodayScreen extends ConsumerWidget {
         sliver: SliverList(
           delegate: SliverChildListDelegate([
             const _QuickActions(),
-            const _WeeklyLine(),
+            _WeeklyLine(),
             if (entries.isEmpty) _EmptyDay(day: day) else ...[
-              const _Frequent(),
+              _Frequent(),
               for (var m = 0; m < 4; m++) _MealSection(meal: m, entries: [for (final e in entries) if (e.meal == m) e]),
             ],
-            const SizedBox(height: 24),
-            const _WaterRow(),
-            const SizedBox(height: 32),
-            const _WeekStrip(),
+            SizedBox(height: 24),
+            _WaterRow(),
+            SizedBox(height: 32),
+            _WeekStrip(),
+            SizedBox(height: 8),
+            NavRow(
+              minHeight: 60,
+              bottomLine: true,
+              title: 'Dziś nie liczę',
+              subtitle: 'Dzień poza średnimi i serią, nic nie przepada',
+              onTap: () async {
+                await ref.read(dbProvider).setSkipDay(dayKey(day), true);
+                ref.read(dataVersionProvider.notifier).bump();
+              },
+            ),
           ]),
         ),
       ),
@@ -470,22 +529,7 @@ class _EntryRow extends ConsumerWidget {
         ),
       );
 
-  Future<void> _edit(BuildContext context, WidgetRef ref) async {
-    final per100 = e.grams > 0 ? e.macros * (100 / e.grams) : Macros.zero;
-    final food = Food(
-        name: e.name,
-        kcal100: per100.kcal,
-        p100: per100.p,
-        c100: per100.c,
-        f100: per100.f,
-        servingG: e.grams,
-        source: e.estimated ? 'ai' : 'own');
-    final g = await askGrams(context, food, initial: e.grams);
-    if (g == null) return;
-    await ref.read(dbProvider).updateEntry(Entry(
-        id: e.id, day: e.day, meal: e.meal, name: e.name, grams: g, macros: food.per(g), estimated: e.estimated));
-    ref.read(dataVersionProvider.notifier).bump();
-  }
+  Future<void> _edit(BuildContext context, WidgetRef ref) => showEditEntry(context, e);
 }
 
 // ---------------------------------------------------------------- water + week
@@ -569,6 +613,7 @@ class _WeekStrip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final kcal = ref.watch(weekKcalProvider).value ?? const {};
+    final rest = ref.watch(skipDaysProvider).value ?? const <String>{};
     final n = ref.watch(weekLoggedProvider).value ?? 0;
     final now = DateTime.now();
     final days = [for (var i = 6; i >= 0; i--) now.subtract(Duration(days: i))];
@@ -595,12 +640,18 @@ class _WeekStrip extends ConsumerWidget {
           Expanded(
             child: Builder(builder: (_) {
               final logged = kcal[dayKey(d)] != null;
+              final isRest = rest.contains(dayKey(d));
               final isToday = dayKey(d) == dayKey(now);
               return Column(children: [
                 SizedBox(
                   width: 40,
                   height: 40,
-                  child: logged
+                  child: isRest
+                      ? DecoratedBox(
+                          decoration: BoxDecoration(color: AppColors.track, shape: BoxShape.circle),
+                          child: Icon(Icons.check, size: 20, color: AppColors.accentDeep),
+                        )
+                      : logged
                       ? DecoratedBox(
                           decoration: BoxDecoration(color: AppColors.hero, shape: BoxShape.circle),
                           child: Icon(Icons.check, size: 20, color: AppColors.accent),
