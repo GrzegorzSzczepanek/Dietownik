@@ -20,27 +20,25 @@ Future<void> main() async {
   final db = await AppDb.open();
   await seedFoodsOnce(db);
   final settings = await AiSettingsStore().load();
-  final engineReady = await initEdgeAi();
   final goals = await GoalsNotifier.load();
   // The big product pack loads in the background so first launch stays fast.
   unawaited(loadOffPackOnce(db));
-  runApp(ProviderScope(
+  final container = ProviderContainer(
     overrides: [
       dbProvider.overrideWithValue(db),
       initialAiSettingsProvider.overrideWithValue(settings),
-      engineReadyProvider.overrideWithValue(engineReady),
       initialGoalsProvider.overrideWithValue(goals),
     ],
-    child: const DietownikApp(),
-  ));
+  );
+  // On-device model engine starts in the background; the UI does not wait for it.
+  unawaited(initEdgeAi().then((ok) => container.read(engineReadyProvider.notifier).set(ok)));
+  runApp(UncontrolledProviderScope(container: container, child: const DietownikApp()));
 }
 
 /// Inserts built-in foods; bumping [version] adds newly shipped items on update.
 Future<void> seedFoodsOnce(AppDb db, {int version = 2}) async {
   final prefs = await SharedPreferences.getInstance();
   if ((prefs.getInt('seed_version') ?? 0) >= version) return;
-  for (final f in [...seedFoods, ...genericFoods]) {
-    await db.saveFood(f);
-  }
+  await db.seedFoodsIfMissing([...seedFoods, ...genericFoods]);
   await prefs.setInt('seed_version', version);
 }

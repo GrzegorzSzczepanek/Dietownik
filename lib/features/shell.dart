@@ -23,12 +23,12 @@ class _ShellState extends State<Shell> {
   static const _micSize = 70.0;
   static const _micRise = 28.0;
 
-  // Dziś draws its own hero under the status bar; the other tabs sit in a SafeArea.
+  // Dziś, Przepisy and Ja draw their own hero under the status bar; Czat sits in a SafeArea.
   static const _pages = <Widget>[
     TodayScreen(),
-    SafeArea(bottom: false, child: RecipesScreen()),
+    RecipesScreen(),
     SafeArea(bottom: false, child: AdviceScreen()),
-    SafeArea(bottom: false, child: SettingsScreen()),
+    SettingsScreen(),
   ];
 
   Widget _tab(int i, IconData icon, String label) {

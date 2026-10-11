@@ -19,6 +19,7 @@ import 'common.dart';
 import 'local_models_screen.dart';
 import 'widgets.dart';
 
+/// Ja per design/Ja: goal as the hero number, then flat settings rows.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -28,118 +29,131 @@ class SettingsScreen extends ConsumerWidget {
     final ai = ref.watch(aiSettingsProvider);
     final ctrl = ref.read(aiSettingsProvider.notifier);
     final ready = ref.watch(engineReadyProvider);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-      children: [
-        const Text('Ja', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
-        SectionCard(
-          padding: EdgeInsets.zero,
-          child: ListTile(
-            title: Text('${n0(goals.kcal)} kcal dziennie', style: figure(size: 18)),
-            subtitle: Text('Białko ${n0(goals.p)} g · węgle ${n0(goals.c)} g · tłuszcz ${n0(goals.f)} g'),
-            trailing: const Icon(Icons.edit),
+    final tasks = AiTask.values.where((t) => t != AiTask.embeddings).toList();
+    final allApi = tasks.every((t) => ai.engineFor(t) == AiEngine.api);
+    final apiOk = ai.api.model.isNotEmpty && ai.api.baseUrl.isNotEmpty;
+    final bottom = 84 + MediaQuery.of(context).padding.bottom + 40;
+
+    Future<void> setMode(bool api) async {
+      for (final t in tasks) {
+        await ctrl.setEngine(t, api ? AiEngine.api : AiEngine.local);
+      }
+    }
+
+    Widget switchRow(String title, String sub, bool value, ValueChanged<bool> onChanged, {bool top = true, bool bottomLine = false}) => Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          decoration: BoxDecoration(border: Border(top: top ? BorderSide(color: AppColors.line) : BorderSide.none, bottom: bottomLine ? BorderSide(color: AppColors.line) : BorderSide.none)),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: fig(16, weight: 600)),
+                Text(sub, style: fig(14, color: AppColors.text2, height: 20 / 14)),
+              ]),
+            ),
+            Switch(value: value, onChanged: onChanged),
+          ]),
+        );
+
+    Widget segment(String label, bool selected, VoidCallback onTap) => Expanded(
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? AppColors.bg : Colors.transparent,
+                borderRadius: BorderRadius.circular(11),
+                boxShadow: selected ? [BoxShadow(color: const Color(0xFF17201C).withValues(alpha: 0.18), blurRadius: 2, offset: const Offset(0, 1))] : null,
+              ),
+              child: Text(label, style: fig(15, weight: selected ? 700 : 600, color: selected ? AppColors.text : AppColors.text3)),
+            ),
+          ),
+        );
+
+    return ListView(padding: EdgeInsets.only(bottom: bottom), children: [
+      HeroZone(
+        bottom: 20,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(height: 48, child: Align(alignment: Alignment.centerLeft, child: Text('Ja', style: fig(18, weight: 700)))),
+          const SizedBox(height: 8),
+          Text('Twój dzienny cel', style: fig(15, color: AppColors.text3)),
+          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+            Text(n0(goals.kcal), style: display(56)),
+            const SizedBox(width: 10),
+            Text('kcal', style: fig(17, weight: 600)),
+          ]),
+          const SizedBox(height: 2),
+          Text('Białko ${n0(goals.p)} g · węgle ${n0(goals.c)} g · tłuszcz ${n0(goals.f)} g', style: fig(15, color: AppColors.text3)),
+          const SizedBox(height: 12),
+          GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsScreen())),
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(14)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.edit_outlined, size: 20, color: AppColors.accent),
+                const SizedBox(width: 8),
+                Text('Zmień cele', style: fig(15, weight: 700, color: AppColors.accent)),
+              ]),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        SectionCard(
-          padding: EdgeInsets.zero,
-          child: SwitchListTile(
-            secondary: Icon(Icons.date_range, color: AppColors.green),
-            title: const Text('Cel tygodniowy'),
-            subtitle: const Text('Kalorie liczone na cały tydzień. Gorszy dzień się wyrównuje.'),
-            value: ref.watch(weeklyModeProvider),
-            onChanged: (v) => ref.read(weeklyModeProvider.notifier).set(v),
-          ),
-        ),
-        const SizedBox(height: 8),
-        SectionCard(
-          padding: EdgeInsets.zero,
-          child: ListTile(
-            leading: Icon(Icons.monitor_weight_outlined, color: AppColors.green),
-            title: const Text('Waga i trend'),
-            trailing: const Icon(Icons.chevron_right),
+        ]),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Cele i pomiary', style: fig(18, weight: 700)),
+          const SizedBox(height: 4),
+          switchRow('Cel na cały tydzień', 'Gorszy dzień się wyrówna', ref.watch(weeklyModeProvider), (v) => ref.read(weeklyModeProvider.notifier).set(v)),
+          NavRow(
+            minHeight: 56,
+            title: 'Waga i trend',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeightScreen())),
           ),
-        ),
-        const SizedBox(height: 8),
-        const _RemindersCard(),
-        const SizedBox(height: 16),
-        const Eyebrow('AI: co gdzie działa'),
-        const SizedBox(height: 8),
-        SectionCard(
-          child: Column(children: [
-            for (final t in AiTask.values.where((t) => t != AiTask.embeddings))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(children: [
-                  Expanded(child: Text(t.label, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  EngineToggle(api: ai.engineFor(t) == AiEngine.api, onChanged: (api) => ctrl.setEngine(t, api ? AiEngine.api : AiEngine.local)),
-                ]),
-              ),
-            if (!ready)
-              Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text('Silnik lokalny nie wystartował na tym telefonie — używaj API.', style: TextStyle(color: AppColors.amberInk)),
-              ),
-          ]),
-        ),
-        const SizedBox(height: 8),
-        SectionCard(
-          padding: EdgeInsets.zero,
-          child: Column(children: [
-            ListTile(
-              leading: Icon(Icons.memory, color: AppColors.green),
-              title: const Text('Lokalne AI (modele offline)'),
-              subtitle: const Text('Pobierz model raz, potem działa bez internetu'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LocalModelsScreen())),
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.cloud_outlined, color: AppColors.green),
-              title: const Text('Dostawca API'),
-              subtitle: Text(ai.api.model.isEmpty ? 'Nie skonfigurowano' : ai.api.model),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApiProviderScreen())),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 8),
-        SectionCard(
-          padding: EdgeInsets.zero,
-          child: ListTile(
-            leading: Icon(Icons.upload_file, color: AppColors.green),
-            title: const Text('Importuj produkty z CSV'),
-            subtitle: const Text('nazwa; marka; kcal; białko; węgle; tłuszcz; porcja g; na (100g/porcja); kod'),
-            onTap: () => _importCsv(context, ref),
+          const _RemindersCard(),
+          const SizedBox(height: 28),
+          Text('Rozumienie zdań (AI)', style: fig(18, weight: 700)),
+          const SizedBox(height: 2),
+          Text('Mikrofon, szacowanie makro i porady używają jednego trybu.', style: fig(14, color: AppColors.text2, height: 20 / 14)),
+          const SizedBox(height: 12),
+          Container(
+            height: 52,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(14)),
+            child: Row(children: [
+              segment('Na telefonie', !allApi, () => setMode(false)),
+              segment('Przez internet', allApi, () => setMode(true)),
+            ]),
           ),
-        ),
-        const SizedBox(height: 8),
-        SectionCard(
-          padding: EdgeInsets.zero,
-          child: Column(children: [
-            ListTile(
-              leading: Icon(Icons.ios_share, color: AppColors.green),
-              title: const Text('Zrób kopię zapasową'),
-              subtitle: const Text('Plik JSON z wpisami, przepisami, wagą i produktami'),
-              onTap: () => _backup(context, ref),
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.restore, color: AppColors.green),
-              title: const Text('Przywróć z kopii'),
-              subtitle: const Text('Zastąpi wpisy, przepisy i wagę'),
-              onTap: () => _restore(context, ref),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        Text('Dietownik 1.0 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
-            style: TextStyle(color: AppColors.muted, fontSize: 12)),
-      ],
-    );
+          if (!allApi && !ready)
+            Padding(padding: const EdgeInsets.only(top: 8), child: Text('Silnik na telefonie nie wystartował na tym urządzeniu. Użyj trybu przez internet.', style: fig(14, weight: 600, color: AppColors.warn))),
+          const SizedBox(height: 4),
+          NavRow(
+            topLine: false,
+            minHeight: 60,
+            title: 'Dostawca API',
+            subtitle: apiOk ? '${ai.api.providerLabel}, ${ai.api.model}' : 'Nie skonfigurowano. Dodaj klucz',
+            subtitleColor: apiOk ? null : AppColors.warn,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApiProviderScreen())),
+          ),
+          NavRow(
+            minHeight: 60,
+            title: 'Modele na telefonie',
+            subtitle: 'Pobierz raz, potem działają bez internetu',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LocalModelsScreen())),
+          ),
+          const SizedBox(height: 24),
+          Text('Twoje dane', style: fig(18, weight: 700)),
+          const SizedBox(height: 4),
+          NavRow(minHeight: 52, title: 'Zapisz kopię zapasową', onTap: () => _backup(context, ref), trailing: const SizedBox.shrink()),
+          NavRow(minHeight: 52, title: 'Przywróć z kopii', onTap: () => _restore(context, ref), trailing: const SizedBox.shrink()),
+          NavRow(minHeight: 52, bottomLine: true, title: 'Importuj produkty z CSV', subtitle: 'nazwa; marka; kcal; białko; węgle; tłuszcz; porcja g; na; kod', onTap: () => _importCsv(context, ref), trailing: const SizedBox.shrink()),
+          const SizedBox(height: 20),
+          Text('Dietownik 1.0 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
+              style: fig(13, color: AppColors.text2, height: 18 / 13)),
+        ]),
+      ),
+    ]);
   }
 }
 
@@ -197,32 +211,44 @@ class _RemindersCard extends ConsumerWidget {
     final ctrl = ref.read(remindersProvider.notifier);
     const names = ['Śniadanie', 'Obiad', 'Kolacja'];
     String fmt(int m) => '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}';
-    return SectionCard(
-      padding: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.line), bottom: BorderSide(color: AppColors.line))),
       child: Column(children: [
-        SwitchListTile(
-          secondary: Icon(Icons.notifications_outlined, color: AppColors.green),
-          title: const Text('Przypomnienia o posiłkach'),
-          subtitle: const Text('Tylko gdy posiłku jeszcze nie zapisałeś'),
-          value: prefs.enabled,
-          onChanged: (v) async {
-            final ok = await ctrl.set(prefs.copyWith(enabled: v));
-            if (!ok && context.mounted) toast(context, 'Brak zgody na powiadomienia. Włącz ją w ustawieniach telefonu.');
-          },
+        Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Przypomnienia o posiłkach', style: fig(16, weight: 600)),
+                Text('Tylko gdy posiłku jeszcze nie zapisałeś', style: fig(14, color: AppColors.text2, height: 20 / 14)),
+              ]),
+            ),
+            Switch(
+              value: prefs.enabled,
+              onChanged: (v) async {
+                final ok = await ctrl.set(prefs.copyWith(enabled: v));
+                if (!ok && context.mounted) toast(context, 'Brak zgody na powiadomienia. Włącz ją w ustawieniach telefonu.');
+              },
+            ),
+          ]),
         ),
         if (prefs.enabled)
           for (var i = 0; i < 3; i++)
-            ListTile(
-              dense: true,
-              title: Text(names[i]),
-              trailing: Text(fmt(prefs.slots[i]), style: figure(size: 16)),
+            InkWell(
               onTap: () async {
-                final t = await showTimePicker(
-                    context: context, initialTime: TimeOfDay(hour: prefs.slots[i] ~/ 60, minute: prefs.slots[i] % 60));
+                final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: prefs.slots[i] ~/ 60, minute: prefs.slots[i] % 60));
                 if (t == null) return;
                 final slots = [...prefs.slots]..[i] = t.hour * 60 + t.minute;
                 await ctrl.set(prefs.copyWith(slots: slots));
               },
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.line))),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text(names[i], style: fig(15)),
+                  Text(fmt(prefs.slots[i]), style: fig(16, weight: 700)),
+                ]),
+              ),
             ),
       ]),
     );

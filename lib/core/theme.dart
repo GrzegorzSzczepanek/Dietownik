@@ -194,8 +194,8 @@ ThemeData buildTheme(Brightness b) {
       shape: r(14),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.onAccent : AppColors.text2),
-      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.accent : AppColors.track),
+      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.onAccent : (b == Brightness.dark ? AppColors.text2 : Colors.white)),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.accent : AppColors.outline),
       trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
     ),
     listTileTheme: ListTileThemeData(

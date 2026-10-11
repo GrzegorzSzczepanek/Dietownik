@@ -13,94 +13,47 @@ import 'scan_screen.dart';
 import 'shopping_screen.dart';
 import 'widgets.dart';
 
-class RecipesScreen extends ConsumerWidget {
+/// Przepisy per design/Przepisy: hero with a paste-a-link field, then a flat list of entry points.
+class RecipesScreen extends ConsumerStatefulWidget {
   const RecipesScreen({super.key});
+  @override
+  ConsumerState<RecipesScreen> createState() => _RecipesScreenState();
+}
+
+class _RecipesScreenState extends ConsumerState<RecipesScreen> {
+  final _url = TextEditingController();
+  bool _importing = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final list = ref.watch(recipesProvider).value ?? const <Recipe>[];
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-      children: [
-        Row(children: [
-          Expanded(child: Text('Przepisy', style: display(30))),
-          IconButton(
-            tooltip: 'Zeskanuj kod',
-            icon: Icon(Icons.qr_code_scanner, color: AppColors.accent),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen())),
-          ),
-        ]),
-        const SizedBox(height: 12),
-        Row(children: [
-          Expanded(child: _Btn(Icons.link, 'Z linku', () => _import(context, ref))),
-          const SizedBox(width: 8),
-          Expanded(child: _Btn(Icons.edit_note, 'Własny', () => _open(context, const Recipe(title: '')))),
-          const SizedBox(width: 8),
-          Expanded(child: _Btn(Icons.auto_awesome, 'Pomysł AI', () => _idea(context, ref))),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: _Btn(Icons.kitchen, 'Co mam w lodówce', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FridgeScreen())))),
-          const SizedBox(width: 8),
-          Expanded(child: _Btn(Icons.shopping_cart_outlined, 'Zakupy', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingScreen())))),
-        ]),
-        const SizedBox(height: 16),
-        if (list.isEmpty)
-          const SectionCard(
-            child: Text('Wklej link do przepisu (aniagotuje, kwestiasmaku, mojewypieki…), zapiszę składniki i kroki oraz policzę kalorie na porcję. Albo poproś AI o pomysł z tego, co masz w lodówce.',
-                style: TextStyle(fontSize: 15, height: 1.4)),
-          ),
-        for (final r in list)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: SectionCard(
-              padding: const EdgeInsets.all(4),
-              child: ListTile(
-                title: Text(r.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(r.perServing.kcal == 0
-                    ? '${r.servings} porcji · brak kalorii'
-                    : '${n0(r.perServing.kcal)} kcal/porcja · ${macroText(r.perServing)}'),
-                leading: Icon(r.favorite ? Icons.star : Icons.restaurant_menu, color: AppColors.green),
-                onTap: () => _open(context, r),
-              ),
-            ),
-          ),
-      ],
-    );
+  void dispose() {
+    _url.dispose();
+    super.dispose();
   }
 
   static void _open(BuildContext context, Recipe r) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeScreen(initial: r)));
 
-  Future<void> _import(BuildContext context, WidgetRef ref) async {
-    final ctrl = TextEditingController();
-    final url = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Import z linku'),
-        content: TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.url, decoration: const InputDecoration(hintText: 'https://…')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Anuluj')),
-          FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(110, 44)), onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('Importuj')),
-        ],
-      ),
-    );
-    if (url == null || url.isEmpty || !context.mounted) return;
+  Future<void> _import() async {
+    final url = _url.text.trim();
+    if (url.isEmpty || _importing) return;
+    setState(() => _importing = true);
     toast(context, 'Pobieram przepis…');
     try {
       final r = await importRecipeFromUrl(url.startsWith('http') ? url : 'https://$url');
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (r == null) {
         toast(context, 'Ta strona nie udostępnia przepisu w czytelnym formacie. Dodaj ręcznie.');
       } else {
+        _url.clear();
         _open(context, r);
       }
     } catch (e) {
-      if (context.mounted) toast(context, 'Nie udało się pobrać strony: $e');
+      if (mounted) toast(context, 'Nie udało się pobrać strony: $e');
     }
+    if (mounted) setState(() => _importing = false);
   }
 
-  Future<void> _idea(BuildContext context, WidgetRef ref) async {
+  Future<void> _idea() async {
     final ctrl = TextEditingController();
     final req = await showDialog<String>(
       context: context,
@@ -109,38 +62,123 @@ class RecipesScreen extends ConsumerWidget {
         content: TextField(controller: ctrl, autofocus: true, maxLines: 2, decoration: const InputDecoration(hintText: 'np. obiad 500 kcal z kurczakiem i ryżem')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Anuluj')),
-          FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(110, 44)), onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('Wymyśl')),
+          FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(110, 48)), onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('Wymyśl')),
         ],
       ),
     );
-    if (req == null || req.isEmpty || !context.mounted) return;
+    if (req == null || req.isEmpty || !mounted) return;
     final ai = await ref.read(aiSettingsProvider.notifier).dietAi();
+    if (!mounted) return;
     if (!ai.canRun(AiTask.advice)) {
-      toast(context, 'Najpierw skonfiguruj AI (Ja → Lokalne AI / Dostawca API).');
+      toast(context, 'Najpierw skonfiguruj AI (Ja → Dostawca API).');
       return;
     }
     toast(context, 'Wymyślam…');
     try {
       final r = await ai.recipeIdea(req);
-      if (context.mounted) _open(context, r);
+      if (mounted) _open(context, r);
     } catch (e) {
-      if (context.mounted) toast(context, 'AI nie dało rady: $e');
+      if (mounted) toast(context, 'AI nie dało rady: $e');
     }
   }
-}
 
-class _Btn extends StatelessWidget {
-  const _Btn(this.icon, this.label, this.onTap);
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52), padding: const EdgeInsets.symmetric(horizontal: 6), backgroundColor: AppColors.bg),
-        onPressed: onTap,
-        icon: Icon(icon, size: 20, color: AppColors.green),
-        label: Text(label, style: const TextStyle(fontSize: 13)),
-      );
+  Widget build(BuildContext context) {
+    final list = ref.watch(recipesProvider).value ?? const <Recipe>[];
+    final shopping = ref.watch(shoppingProvider).where((e) => e.startsWith('0|')).length;
+    final bottom = 84 + MediaQuery.of(context).padding.bottom + 40;
+    Widget icon(IconData i) => Icon(i, color: AppColors.accent, size: 26);
+    return ListView(padding: EdgeInsets.only(bottom: bottom), children: [
+      HeroZone(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            height: 52,
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('Przepisy', style: display(32)),
+              Transform.translate(
+                offset: const Offset(12, 0),
+                child: IconButton(
+                  tooltip: 'Skanuj kod',
+                  icon: Icon(Icons.qr_code_scanner, color: AppColors.accent),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen())),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          Text('Wklej link do przepisu, a policzę kalorie na porcję.', style: fig(17, weight: 600, height: 24 / 17)),
+          const SizedBox(height: 14),
+          HeroField(
+            controller: _url,
+            hint: 'aniagotuje.pl, kwestiasmaku.com…',
+            keyboardType: TextInputType.url,
+            leading: Icon(Icons.link, color: AppColors.text2),
+            onSubmitted: (_) => _import(),
+            actions: [AccentSquareButton(onTap: _import, label: _importing ? '…' : 'Importuj', semantics: 'Importuj przepis')],
+          ),
+        ]),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          NavRow(
+            topLine: false,
+            minHeight: 72,
+            bold: true,
+            leading: icon(Icons.kitchen_outlined),
+            title: 'Co mam w lodówce',
+            subtitle: 'Wpisz składniki, a znajdę prawdziwe przepisy',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FridgeScreen())),
+          ),
+          NavRow(
+            minHeight: 72,
+            bold: true,
+            leading: icon(Icons.shopping_cart_outlined),
+            title: 'Zakupy',
+            subtitle: shopping == 0 ? 'Lista jest pusta' : '$shopping do kupienia',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingScreen())),
+          ),
+          NavRow(
+            minHeight: 72,
+            bold: true,
+            leading: icon(Icons.auto_awesome_outlined),
+            title: 'Pomysł od AI',
+            subtitle: 'Oznaczony jako niezweryfikowany',
+            onTap: _idea,
+          ),
+          NavRow(
+            minHeight: 72,
+            bold: true,
+            bottomLine: true,
+            leading: icon(Icons.edit_note),
+            title: 'Własny przepis',
+            subtitle: 'Wpisz składniki i kroki ręcznie',
+            onTap: () => _open(context, const Recipe(title: '')),
+          ),
+          const SizedBox(height: 28),
+          if (list.isEmpty)
+            Text('Zapisane przepisy pojawią się tutaj, ulubione na górze. Pierwszy dodasz linkiem w kilka sekund.',
+                style: fig(16, color: AppColors.text3, height: 24 / 16))
+          else ...[
+            Text('Zapisane', style: fig(18, weight: 700)),
+            const SizedBox(height: 4),
+            for (var i = 0; i < list.length; i++)
+              NavRow(
+                topLine: true,
+                bottomLine: i == list.length - 1,
+                minHeight: 64,
+                title: list[i].title,
+                subtitle: list[i].perServing.kcal == 0
+                    ? '${list[i].servings} porcji · brak kalorii'
+                    : '~${n0(list[i].perServing.kcal)} kcal/porcja · ${macroText(list[i].perServing)}',
+                trailing: list[i].favorite ? Icon(Icons.star, color: AppColors.accent) : null,
+                onTap: () => _open(context, list[i]),
+              ),
+          ],
+        ]),
+      ),
+    ]);
+  }
 }
 
 class RecipeScreen extends ConsumerStatefulWidget {

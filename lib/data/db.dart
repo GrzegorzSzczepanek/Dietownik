@@ -94,6 +94,18 @@ class AppDb {
 
   Future<Set<String>> barcodes() async => (await _db.rawQuery("SELECT barcode FROM foods WHERE barcode IS NOT NULL AND barcode != ''")).map((r) => r['barcode'] as String).toSet();
 
+  /// Inserts foods whose name+brand is not present yet, in one batch.
+  Future<void> seedFoodsIfMissing(List<Food> foods) async {
+    final have = (await _db.rawQuery('SELECT LOWER(name) n, LOWER(IFNULL(brand, "")) b FROM foods'))
+        .map((r) => '${r['n']}|${r['b']}')
+        .toSet();
+    final b = _db.batch();
+    for (final f in foods) {
+      if (have.add('${f.name.toLowerCase()}|${f.brand.toLowerCase()}')) b.insert('foods', f.toMap());
+    }
+    await b.commit(noResult: true);
+  }
+
   Future<int> foodCount() async =>
       Sqflite.firstIntValue(await _db.rawQuery('SELECT COUNT(*) FROM foods')) ?? 0;
 

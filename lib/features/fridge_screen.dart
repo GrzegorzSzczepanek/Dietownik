@@ -85,82 +85,125 @@ class _FridgeScreenState extends ConsumerState<FridgeScreen> {
   @override
   Widget build(BuildContext context) {
     final pantry = ref.watch(pantryProvider);
+    final bottom = MediaQuery.of(context).padding.bottom + 32;
     return Scaffold(
-      appBar: AppBar(title: const Text('Co mam w lodówce'), actions: [
-        IconButton(icon: const Icon(Icons.key), tooltip: 'Klucz Brave Search', onPressed: _braveKey),
-      ]),
-      body: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 40), children: [
-        TextField(
-          controller: _input,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(hintText: 'jajka, ser, pomidor…', suffixIcon: IconButton(icon: const Icon(Icons.add), onPressed: _add)),
-          onSubmitted: (_) => _add(),
+      backgroundColor: AppColors.bg,
+      body: ListView(padding: EdgeInsets.only(bottom: bottom), children: [
+        HeroZone(
+          bottom: 20,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            HeroBackHeader('Co mam w lodówce', actions: [
+              Transform.translate(
+                offset: const Offset(12, 0),
+                child: IconButton(icon: Icon(Icons.key, color: AppColors.text2), tooltip: 'Klucz Brave Search', onPressed: _braveKey),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            HeroField(
+              controller: _input,
+              hint: 'Dodaj składnik',
+              onSubmitted: (_) => _add(),
+              actions: [AccentSquareButton(onTap: _add, icon: Icons.add, semantics: 'Dodaj składnik')],
+            ),
+            if (pantry.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final p in pantry)
+                  GestureDetector(
+                    onTap: () => ref.read(pantryProvider.notifier).remove(p),
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.only(left: 16, right: 10),
+                      decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(22)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text(p, style: fig(15, weight: 600)),
+                        const SizedBox(width: 6),
+                        Icon(Icons.close, size: 18, color: AppColors.text2),
+                      ]),
+                    ),
+                  ),
+              ]),
+            ],
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 56,
+              child: FilledButton(
+                onPressed: _busy || pantry.isEmpty ? null : _search,
+                child: Text(_busy ? 'Szukam…' : 'Szukaj przepisów w sieci'),
+              ),
+            ),
+          ]),
         ),
-        const SizedBox(height: 10),
-        Wrap(spacing: 8, runSpacing: 4, children: [
-          for (final p in pantry) InputChip(label: Text(p), onDeleted: () => ref.read(pantryProvider.notifier).remove(p)),
-        ]),
-        if (pantry.isNotEmpty)
-          Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => ref.read(pantryProvider.notifier).replace(const []), child: const Text('Wyczyść'))),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: FilledButton.icon(onPressed: _busy || pantry.isEmpty ? null : _search, icon: const Icon(Icons.travel_explore), label: const Text('Szukaj w sieci'))),
-          const SizedBox(width: 8),
-          Expanded(child: OutlinedButton.icon(onPressed: _busy || pantry.isEmpty ? null : _aiIdea, icon: const Icon(Icons.auto_awesome), label: const Text('Pomysł AI'))),
-        ]),
         Padding(
-          padding: EdgeInsets.only(top: 6, bottom: 12),
-          child: Text('Wyniki z sieci to prawdziwe przepisy ze stron. Zgodność liczę ze składników, nie zgaduje jej AI. „Pomysł AI” jest nieweryfikowany.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('To prawdziwe przepisy ze stron. Zgodność liczę ze składników, nie zgaduje jej AI.', style: fig(15, color: AppColors.text3, height: 22 / 15)),
+            const SizedBox(height: 8),
+            if (_busy) const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
+            if (_note != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_note!, style: fig(15, weight: 600, color: AppColors.warn))),
+            for (var i = 0; i < (_results ?? const <RecipeMatch>[]).length; i++) _MatchRow(_results![i], last: i == _results!.length - 1),
+            if (pantry.isNotEmpty)
+              NavRow(
+                topLine: _results == null || _results!.isEmpty,
+                bottomLine: true,
+                minHeight: 60,
+                leading: Icon(Icons.auto_awesome_outlined, color: AppColors.accent),
+                title: 'Pomysł AI z tych składników',
+                subtitle: 'Niezweryfikowany, AI może się mylić',
+                subtitleColor: AppColors.warn,
+                onTap: _busy ? null : _aiIdea,
+              ),
+          ]),
         ),
-        if (_busy) const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-        if (_note != null) Text(_note!, style: TextStyle(color: AppColors.amberInk)),
-        for (final m in _results ?? const <RecipeMatch>[]) _MatchCard(m),
       ]),
     );
   }
 }
 
-class _MatchCard extends ConsumerWidget {
-  const _MatchCard(this.m);
+class _MatchRow extends ConsumerWidget {
+  const _MatchRow(this.m, {required this.last});
   final RecipeMatch m;
+  final bool last;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pct = (m.score * 100).round();
-    final color = pct >= 80 ? AppColors.green : (pct >= 50 ? AppColors.amber : AppColors.muted);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: SectionCard(
-        child: InkWell(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeScreen(initial: m.recipe))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text(m.recipe.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800))),
-              Text('$pct%', style: figure(size: 20, color: color)),
-            ]),
-            const SizedBox(height: 6),
-            ProgressBar(m.score, color: color, height: 8),
-            const SizedBox(height: 8),
-            Text('Masz ${m.have.length} z ${m.have.length + m.missing.length} składników', style: const TextStyle(fontWeight: FontWeight.w600)),
-            if (m.missing.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text('Brakuje: ${m.missing.join('; ')}', style: TextStyle(color: AppColors.amberInk, fontSize: 13)),
-            ],
-            const SizedBox(height: 6),
-            Wrap(spacing: 8, children: [
-              Pill(m.verified ? 'prawdziwy przepis' : 'AI — nieweryfikowane', bg: m.verified ? AppColors.greenSoft : AppColors.amberSoft, fg: m.verified ? AppColors.green : AppColors.amberInk),
-              if (m.recipe.perServing.kcal > 0) Pill('${n0(m.recipe.perServing.kcal)} kcal/porcja'),
-            ]),
-            if (m.missing.isNotEmpty)
-              TextButton.icon(
-                onPressed: () {
-                  ref.read(shoppingProvider.notifier).add([for (final x in m.missing) '0|$x']);
-                  toast(context, 'Dodano ${m.missing.length} do listy zakupów');
-                },
-                icon: const Icon(Icons.add_shopping_cart),
-                label: const Text('Brakujące do zakupów'),
-              ),
+    final total = m.have.length + m.missing.length;
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeScreen(initial: m.recipe))),
+      child: Container(
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.line), bottom: last ? BorderSide(color: AppColors.line) : BorderSide.none)),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(m.verified ? m.recipe.title : 'Pomysł AI: ${m.recipe.title}', style: fig(17, weight: 700)),
+                Text(m.verified ? 'Masz ${m.have.length} z $total składników' : 'Niezweryfikowany · masz ${m.have.length} z $total',
+                    style: fig(14, weight: m.verified ? 400 : 600, color: m.verified ? AppColors.text2 : AppColors.warn)),
+              ]),
+            ),
+            const SizedBox(width: 12),
+            Text('$pct%', style: display(32, color: pct >= 60 ? AppColors.text : AppColors.text2)),
           ]),
-        ),
+          if (m.missing.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('Brakuje: ${m.missing.join(', ')}', style: fig(14, color: AppColors.text3)),
+            InkWell(
+              onTap: () {
+                ref.read(shoppingProvider.notifier).add([for (final x in m.missing) '0|$x']);
+                toast(context, 'Dodano ${m.missing.length} do listy zakupów');
+              },
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Row(children: [
+                  Icon(Icons.add_shopping_cart, size: 20, color: AppColors.accent),
+                  const SizedBox(width: 6),
+                  Text('Dodaj brakujące do zakupów', style: fig(15, weight: 600, color: AppColors.accent)),
+                ]),
+              ),
+            ),
+          ],
+        ]),
       ),
     );
   }

@@ -174,7 +174,7 @@ class ModelStatus {
 /// our own choice, stored in preferences and applied by the runtime.
 class ModelDownloads extends Notifier<Map<String, ModelStatus>> {
   final _cancel = <String, edge.CancelToken>{};
-  late final bool _engineReady = ref.read(engineReadyProvider);
+  bool get _engineReady => ref.read(engineReadyProvider);
 
   @override
   Map<String, ModelStatus> build() {

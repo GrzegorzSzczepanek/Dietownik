@@ -26,7 +26,13 @@ final initialAiSettingsProvider =
 final initialGoalsProvider = Provider<Goals>((ref) => const Goals());
 
 /// Whether the on-device engine initialised (set in main()).
-final engineReadyProvider = Provider<bool>((ref) => false);
+class EngineReady extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void set(bool v) => state = v;
+}
+
+final engineReadyProvider = NotifierProvider<EngineReady, bool>(EngineReady.new);
 final offProvider = Provider<OffClient>((ref) => OffClient());
 
 final localRuntimeProvider = Provider<LocalRuntime>((ref) {
