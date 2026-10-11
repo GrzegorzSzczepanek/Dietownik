@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme.dart';
 import '../domain/models.dart';
@@ -26,18 +27,56 @@ class _EditEntry extends ConsumerStatefulWidget {
 }
 
 class _EditEntryState extends ConsumerState<_EditEntry> {
-  late double _amount = widget.e.grams > 0 ? widget.e.grams : 1; // grams, or portions when grams == 0
+  // Amount is edited in pieces when the food has a piece weight, otherwise in grams;
+  // entries without grams (recipes, "na oko") are scaled in portions.
+  late bool _pieces = widget.e.hasPieces;
+  late double _amount = _initialAmount();
+  late final TextEditingController _ctrl = TextEditingController(text: _fmt(_amount));
   late int _meal = widget.e.meal;
   late String _day = widget.e.day;
 
   bool get _byGrams => widget.e.grams > 0;
-  double get _factor => _byGrams ? _amount / widget.e.grams : _amount;
+
+  double _initialAmount() {
+    final e = widget.e;
+    if (!_byGrams) return 1;
+    return _pieces ? e.grams / e.pieceG : e.grams;
+  }
+
+  String _fmt(double v) => v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1).replaceAll('.', ',');
+
+  double get _step => !_byGrams ? 0.5 : (_pieces ? 1 : 10);
+
+  double get _newGrams => !_byGrams ? 0 : (_pieces ? _amount * widget.e.pieceG : _amount);
+  double get _factor => !_byGrams ? _amount : _newGrams / widget.e.grams;
   Macros get _macros => widget.e.macros * _factor;
+
+  void _setAmount(double v) {
+    final nv = v < _step ? _step : v;
+    setState(() => _amount = nv);
+    _ctrl.text = _fmt(nv);
+  }
+
+  void _switchUnit(bool pieces) {
+    if (pieces == _pieces) return;
+    final grams = _newGrams;
+    setState(() {
+      _pieces = pieces;
+      _amount = pieces ? grams / widget.e.pieceG : grams;
+    });
+    _ctrl.text = _fmt(_amount);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _save() async {
     final e = widget.e;
     final db = ref.read(dbProvider);
-    await db.updateEntry(Entry(id: e.id, day: e.day, meal: _meal, name: e.name, grams: _byGrams ? _amount : 0, macros: _macros, estimated: e.estimated));
+    await db.updateEntry(e.copyWith(meal: _meal, grams: _byGrams ? _newGrams : 0, macros: _macros));
     if (_day != e.day) await db.moveEntry(e.id!, _day, _meal);
     ref.read(dataVersionProvider.notifier).bump();
     if (mounted) Navigator.pop(context);
@@ -52,7 +91,7 @@ class _EditEntryState extends ConsumerState<_EditEntry> {
   Future<void> _copyTomorrow() async {
     final e = widget.e;
     final t = DateTime.parse(_day).add(const Duration(days: 1));
-    await ref.read(dbProvider).addEntry(Entry(day: dayKey(t), meal: _meal, name: e.name, grams: e.grams, macros: e.macros, estimated: e.estimated));
+    await ref.read(dbProvider).addEntry(e.copyWith(day: dayKey(t), meal: _meal));
     ref.read(dataVersionProvider.notifier).bump();
     if (mounted) {
       toast(context, 'Skopiowano na jutro');
@@ -87,7 +126,6 @@ class _EditEntryState extends ConsumerState<_EditEntry> {
   @override
   Widget build(BuildContext context) {
     final e = widget.e;
-    final step = _byGrams ? 10.0 : 0.5;
     Widget round(String t, String label, VoidCallback onTap) => Semantics(
           button: true,
           label: label,
@@ -113,6 +151,22 @@ class _EditEntryState extends ConsumerState<_EditEntry> {
             ]),
           ),
         );
+    Widget unitChip(String label, bool sel, VoidCallback onTap) => GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: sel ? AppColors.hero : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: sel ? AppColors.accent : AppColors.outline, width: sel ? 2 : 1),
+            ),
+            child: Text(label, style: fig(14, weight: 700)),
+          ),
+        );
+    final unitLabel = !_byGrams ? 'porcji' : (_pieces ? 'szt.' : 'g');
+    final isUrl = e.source.startsWith('http');
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -120,16 +174,64 @@ class _EditEntryState extends ConsumerState<_EditEntry> {
         Text(e.name, style: display(26, height: 1.15)),
         const SizedBox(height: 4),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          round('−', 'Mniej', () => setState(() => _amount = (_amount - step).clamp(step, 5000))),
+          round('−', 'Mniej', () => _setAmount(_amount - _step)),
           Column(children: [
             Text('${e.estimated ? '~' : ''}${n0(_macros.kcal)}', style: display(56, height: 60 / 56)),
-            Text(_byGrams ? 'kcal, ${n0(_amount)} g' : 'kcal, ${_amount == _amount.roundToDouble() ? n0(_amount) : _amount.toStringAsFixed(1)} porcji', style: fig(15, color: AppColors.text3)),
+            Text('kcal', style: fig(15, color: AppColors.text3)),
           ]),
-          round('+', 'Więcej', () => setState(() => _amount = _amount + step)),
+          round('+', 'Więcej', () => _setAmount(_amount + _step)),
         ]),
-        const SizedBox(height: 4),
-        Center(child: Text(macroText(_macros), style: fig(14, color: AppColors.text2))),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
+        // Type the amount directly, no stepping needed.
+        Center(
+          child: SizedBox(
+            width: 200,
+            child: TextField(
+              controller: _ctrl,
+              textAlign: TextAlign.center,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: fig(22, weight: 700),
+              onChanged: (t) {
+                final v = double.tryParse(t.replaceAll(',', '.'));
+                if (v != null && v > 0) setState(() => _amount = v);
+              },
+              decoration: InputDecoration(
+                suffixText: ' $unitLabel',
+                suffixStyle: fig(18, weight: 600, color: AppColors.text2),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+        ),
+        if (e.hasPieces && _byGrams)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              unitChip('sztuki', _pieces, () => _switchUnit(true)),
+              const SizedBox(width: 8),
+              unitChip('gramy', !_pieces, () => _switchUnit(false)),
+            ]),
+          ),
+        const SizedBox(height: 6),
+        Center(child: Text('${_byGrams ? '${n0(_newGrams)} g · ' : ''}${macroText(_macros)}', style: fig(14, color: AppColors.text2))),
+        if (e.source.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: InkWell(
+              onTap: isUrl ? () => launchUrl(Uri.parse(e.source), mode: LaunchMode.externalApplication) : null,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 36),
+                child: Center(
+                  child: Text(
+                    isUrl ? 'Źródło: ${Uri.tryParse(e.source)?.host.replaceFirst('www.', '') ?? e.source}' : 'Źródło: ${e.source}',
+                    textAlign: TextAlign.center,
+                    style: fig(13, weight: isUrl ? 600 : 400, color: isUrl ? AppColors.accent : AppColors.text2),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(height: 8),
         Row(children: [
           for (var m = 0; m < 4; m++) ...[
             if (m > 0) const SizedBox(width: 6),

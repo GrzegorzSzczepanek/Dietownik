@@ -9,10 +9,15 @@ class AppDb {
 
   static Future<AppDb> open() async {
     final path = p.join(await getDatabasesPath(), 'dietownik.db');
-    final db = await openDatabase(path, version: 6, onUpgrade: (db, o, n) async {
+    final db = await openDatabase(path, version: 7, onUpgrade: (db, o, n) async {
       if (o < 2) await db.execute('ALTER TABLE foods ADD COLUMN ingredients TEXT');
       if (o < 3) await db.execute('CREATE TABLE IF NOT EXISTS weights(day TEXT PRIMARY KEY, kg REAL)');
       if (o < 4) await db.execute('CREATE TABLE IF NOT EXISTS water(day TEXT PRIMARY KEY, ml INTEGER)');
+      if (o < 7) {
+        await db.execute('ALTER TABLE entries ADD COLUMN piece_g REAL');
+        await db.execute('ALTER TABLE entries ADD COLUMN piece_label TEXT');
+        await db.execute('ALTER TABLE entries ADD COLUMN source TEXT');
+      }
       if (o < 6) await db.execute('CREATE TABLE IF NOT EXISTS day_flags(day TEXT PRIMARY KEY, skip INTEGER)');
       if (o < 5) await db.execute('CREATE TABLE IF NOT EXISTS chat(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, role TEXT, text TEXT, meta TEXT)');
     }, onCreate: (db, v) async {
@@ -27,7 +32,8 @@ class AppDb {
       await db.execute('CREATE INDEX foods_barcode ON foods(barcode)');
       await db.execute('''CREATE TABLE entries(
         id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL, meal INTEGER, name TEXT,
-        grams REAL, kcal REAL, p REAL, c REAL, f REAL, estimated INTEGER DEFAULT 0, ts INTEGER)''');
+        grams REAL, kcal REAL, p REAL, c REAL, f REAL, estimated INTEGER DEFAULT 0, ts INTEGER,
+        piece_g REAL, piece_label TEXT, source TEXT)''');
       await db.execute('CREATE INDEX entries_day ON entries(day)');
       await db.execute('''CREATE TABLE recipes(
         id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, servings INTEGER, ingredients TEXT,
@@ -44,6 +50,11 @@ class AppDb {
 
   Future<int> addEntry(Entry e) =>
       _db.insert('entries', {...e.toMap(), 'ts': DateTime.now().millisecondsSinceEpoch});
+
+  Future<Entry?> entryById(int id) async {
+    final r = await _db.query('entries', where: 'id = ?', whereArgs: [id], limit: 1);
+    return r.isEmpty ? null : Entry.fromMap(r.first);
+  }
 
   Future<void> deleteEntry(int id) => _db.delete('entries', where: 'id = ?', whereArgs: [id]);
 
@@ -111,6 +122,19 @@ class AppDb {
     await b.commit(noResult: true);
   }
 
+  /// Fills in piece weights ("1 jajko" = 55 g) for built-in foods that shipped without one.
+  /// Never touches foods the user corrected or branded products.
+  Future<void> upgradeSeedPieces(List<Food> foods) async {
+    final b = _db.batch();
+    for (final f in foods) {
+      if (f.servingLabel.isEmpty) continue;
+      b.rawUpdate(
+          "UPDATE foods SET serving_g = ?, serving_label = ? WHERE LOWER(name) = ? AND IFNULL(serving_label, '') = '' AND IFNULL(brand, '') = '' AND IFNULL(uses, 0) < 999",
+          [f.servingG, f.servingLabel, f.name.toLowerCase()]);
+    }
+    await b.commit(noResult: true);
+  }
+
   Future<int> foodCount() async =>
       Sqflite.firstIntValue(await _db.rawQuery('SELECT COUNT(*) FROM foods')) ?? 0;
 
@@ -126,7 +150,8 @@ class AppDb {
   Future<List<Entry>> frequentEntries({int limit = 8}) async {
     final rows = await _db.rawQuery('''
       SELECT name, ROUND(AVG(grams)) grams, ROUND(AVG(kcal)) kcal, ROUND(AVG(p),1) p,
-             ROUND(AVG(c),1) c, ROUND(AVG(f),1) f, MAX(estimated) estimated, COUNT(*) n
+             ROUND(AVG(c),1) c, ROUND(AVG(f),1) f, MAX(estimated) estimated, MAX(piece_g) piece_g,
+             MAX(piece_label) piece_label, MAX(source) source, COUNT(*) n
       FROM entries GROUP BY LOWER(name) ORDER BY n DESC, MAX(ts) DESC LIMIT ?''', [limit]);
     return rows
         .map((r) => Entry.fromMap({...r, 'day': '', 'meal': 0}))

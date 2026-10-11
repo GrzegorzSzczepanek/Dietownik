@@ -184,9 +184,12 @@ final weekKcalProvider = FutureProvider<Map<String, double>>((ref) async {
 // ---- logging pipeline
 
 class LogResult {
-  LogResult(this.entries, {this.usedAi = true});
+  LogResult(this.entries, {this.usedAi = true, this.parseError});
   final List<Entry> entries;
   final bool usedAi;
+
+  /// Set when an AI engine was configured but the call failed, so the UI can say why.
+  final String? parseError;
 }
 
 class FoodLogger {
@@ -212,11 +215,15 @@ class FoodLogger {
     final ai = await ref.read(aiSettingsProvider.notifier).dietAi();
     var usedAi = false;
     List<ParsedItem> items = const [];
+    String? parseError;
     if (ai.canRun(AiTask.foodParsing)) {
       try {
         items = await ai.parseMeal(text);
         usedAi = items.isNotEmpty;
-      } catch (_) {}
+        if (items.isEmpty) parseError = 'model nie zwrócił pozycji';
+      } catch (e) {
+        parseError = '$e';
+      }
     }
     if (items.isEmpty) items = fallbackParseMeal(text);
     final resolver = MealResolver(db: db, off: ref.read(offProvider), ai: ai);
@@ -231,6 +238,9 @@ class FoodLogger {
         grams: r.grams.roundToDouble(),
         macros: r.macros,
         estimated: r.estimated || r.unknown,
+        pieceG: r.pieceG,
+        pieceLabel: r.pieceLabel,
+        source: r.source,
       );
       final id = await db.addEntry(e);
       saved.add(Entry(
@@ -240,10 +250,13 @@ class FoodLogger {
           name: e.name,
           grams: e.grams,
           macros: e.macros,
-          estimated: e.estimated));
+          estimated: e.estimated,
+          pieceG: e.pieceG,
+          pieceLabel: e.pieceLabel,
+          source: e.source));
     }
     ref.read(dataVersionProvider.notifier).bump();
-    return LogResult(saved, usedAi: usedAi);
+    return LogResult(saved, usedAi: usedAi, parseError: parseError);
   }
 
   Future<int> addFood(Food food, double grams, {DateTime? when, int? meal}) async {
@@ -258,6 +271,9 @@ class FoodLogger {
       grams: grams,
       macros: food.per(grams),
       estimated: food.estimated,
+      pieceG: food.pieceG,
+      pieceLabel: food.servingLabel,
+      source: food.sourceNote,
     ));
     ref.read(dataVersionProvider.notifier).bump();
     return eid;
@@ -271,7 +287,10 @@ class FoodLogger {
         name: e.name,
         grams: e.grams,
         macros: e.macros,
-        estimated: e.estimated));
+        estimated: e.estimated,
+        pieceG: e.pieceG,
+        pieceLabel: e.pieceLabel,
+        source: e.source));
     ref.read(dataVersionProvider.notifier).bump();
   }
 
@@ -285,7 +304,10 @@ class FoodLogger {
           name: e.name,
           grams: e.grams,
           macros: e.macros,
-          estimated: e.estimated));
+          estimated: e.estimated,
+          pieceG: e.pieceG,
+          pieceLabel: e.pieceLabel,
+          source: e.source));
     }
     ref.read(dataVersionProvider.notifier).bump();
     return list.length;

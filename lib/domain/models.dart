@@ -52,6 +52,26 @@ class Food {
   String get title => brand.isEmpty ? name : '$name · $brand';
   bool get estimated => source == 'ai' || source == 'chain' || source == 'web';
 
+  /// Piece weight when the food has a natural unit ("1 jajko"); 0 otherwise.
+  double get pieceG => servingLabel.isNotEmpty && servingG > 0 ? servingG : 0;
+
+  /// Human-readable origin of the numbers, shown next to every logged value.
+  String get sourceNote {
+    switch (source) {
+      case 'web':
+        final m = RegExp(r'https?://\S+').firstMatch(ingredients);
+        return m?.group(0) ?? 'Wyszukiwarka internetowa';
+      case 'off':
+        return 'Open Food Facts';
+      case 'chain':
+        return 'Menu sieciówki (przybliżone)';
+      case 'ai':
+        return 'Szacunek AI, bez źródła';
+      default:
+        return 'Baza własna';
+    }
+  }
+
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
         'name': name,
@@ -92,6 +112,9 @@ class Entry {
     required this.grams,
     required this.macros,
     this.estimated = false,
+    this.pieceG = 0,
+    this.pieceLabel = '',
+    this.source = '',
   });
   final int? id;
   final String day, name;
@@ -99,6 +122,28 @@ class Entry {
   final double grams;
   final Macros macros;
   final bool estimated;
+
+  /// Weight of one piece ("1 jajko" = 55 g) when the food has one; lets the amount be edited in pieces.
+  final double pieceG;
+  final String pieceLabel;
+
+  /// Where the nutrition values came from: a URL, or a short label such as "Open Food Facts".
+  final String source;
+
+  bool get hasPieces => pieceG > 0 && grams > 0;
+
+  Entry copyWith({int? meal, String? day, double? grams, Macros? macros, String? source}) => Entry(
+        id: id,
+        day: day ?? this.day,
+        meal: meal ?? this.meal,
+        name: name,
+        grams: grams ?? this.grams,
+        macros: macros ?? this.macros,
+        estimated: estimated,
+        pieceG: pieceG,
+        pieceLabel: pieceLabel,
+        source: source ?? this.source,
+      );
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
@@ -111,6 +156,9 @@ class Entry {
         'c': macros.c,
         'f': macros.f,
         'estimated': estimated ? 1 : 0,
+        'piece_g': pieceG,
+        'piece_label': pieceLabel,
+        'source': source,
       };
 
   factory Entry.fromMap(Map<String, Object?> m) => Entry(
@@ -126,6 +174,9 @@ class Entry {
           f: (m['f'] as num).toDouble(),
         ),
         estimated: (m['estimated'] as int? ?? 0) == 1,
+        pieceG: (m['piece_g'] as num?)?.toDouble() ?? 0,
+        pieceLabel: (m['piece_label'] as String?) ?? '',
+        source: (m['source'] as String?) ?? '',
       );
 }
 

@@ -98,7 +98,6 @@ Zwróć WYŁĄCZNIE JSON: {"found":true,"kcal100":n,"p100":n,"c100":n,"f100":n,"
   /// Looks the product up on the web and lets the model read the snippets.
   /// Null when there is no key, no usable result or the model finds no numbers.
   Future<EstimatedFood?> estimateFromWeb(String name) async {
-    if (braveKey == null || braveKey!.isEmpty) return null; // keyless search is too noisy for numbers
     final hits = await webSearch('$name kalorie wartości odżywcze na 100 g', braveKey);
     if (hits.isEmpty) return null;
     final ctx = [for (final h in hits.take(6)) '${h.title}\n${h.url}\n${h.snippet}'].join('\n---\n');

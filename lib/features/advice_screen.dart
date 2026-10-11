@@ -97,7 +97,7 @@ class _AdviceScreenState extends ConsumerState<AdviceScreen> {
           Text('O czym pogadamy?', style: display(36, height: 42 / 36)),
           const SizedBox(height: 10),
           Text(
-            'Znam twój dzień: zostało ${n0(goals.kcal - t.kcal)} kcal i ${n0((goals.p - t.p).clamp(0, 9999))} g białka. ${web ? 'Szukam też w internecie i podaję źródła.' : 'Szukanie w internecie jest wyłączone.'}',
+            '${goals.kcal - t.kcal >= 0 ? 'Znam twój dzień: zostało ${n0(goals.kcal - t.kcal)} kcal i ${n0((goals.p - t.p).clamp(0, 9999))} g białka.' : 'Znam twój dzień: jesteś ${n0(t.kcal - goals.kcal)} kcal ponad plan, to zdarza się każdemu.'} ${web ? 'Szukam też w internecie i podaję źródła.' : 'Szukanie w internecie jest wyłączone.'}',
             style: fig(16, color: AppColors.text3, height: 24 / 16),
           ),
         ]),

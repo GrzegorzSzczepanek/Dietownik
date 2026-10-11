@@ -14,6 +14,7 @@ import 'package:dietownik/services/recipe_search.dart';
 import 'package:dietownik/domain/shopping_parser.dart';
 
 void main() {
+  parserTests();
   shoppingTests();
   matchTests();
   genericTests();
@@ -98,5 +99,24 @@ void shoppingTests() {
     expect(parseShoppingCommand('zakupy jajka, ser, masło i mleko'), ['Jajka', 'Ser', 'Masło', 'Mleko']);
     expect(parseShoppingCommand('Dodaj do zakupów: chleb'), ['Chleb']);
     expect(parseShoppingCommand('dwa jajka i kawa'), isNull);
+  });
+}
+
+void parserTests() {
+  test('fallback parser understands number words and spoons', () {
+    final r = fallbackParseMeal('dwie łyżki masła, pół jogurtu naturalnego i 23 krewetki');
+    expect(r[0].grams, 30);
+    expect(r[0].name, 'masła');
+    expect(r[1].qty, 0.5);
+    expect(r[2].qty, 23);
+    expect(r[2].name, 'krewetki');
+  });
+
+  test('count of items without a piece weight never becomes count x 100 g', () {
+    // krewetki without a piece weight: model estimate wins, then a single serving, never 2300 g
+    const noPiece = Food(name: 'Krewetki', kcal100: 85, servingG: 100);
+    const withPiece = Food(name: 'Jajko', kcal100: 143, servingG: 55, servingLabel: '1 jajko');
+    expect(noPiece.pieceG, 0);
+    expect(withPiece.pieceG, 55);
   });
 }

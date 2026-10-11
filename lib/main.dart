@@ -40,9 +40,10 @@ Future<void> main() async {
 }
 
 /// Inserts built-in foods; bumping [version] adds newly shipped items on update.
-Future<void> seedFoodsOnce(AppDb db, {int version = 2}) async {
+Future<void> seedFoodsOnce(AppDb db, {int version = 3}) async {
   final prefs = await SharedPreferences.getInstance();
   if ((prefs.getInt('seed_version') ?? 0) >= version) return;
   await db.seedFoodsIfMissing([...seedFoods, ...genericFoods]);
+  await db.upgradeSeedPieces([...seedFoods, ...genericFoods]);
   await prefs.setInt('seed_version', version);
 }

@@ -11,6 +11,7 @@ import '../domain/shopping_parser.dart';
 import '../providers.dart';
 import 'api_provider_screen.dart';
 import 'common.dart';
+import 'edit_entry_sheet.dart';
 
 Future<void> showVoiceSheet(BuildContext context) => showModalBottomSheet(
       context: context,
@@ -37,6 +38,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
   String? _error;
   List<Entry> _saved = [];
   bool _usedAi = true;
+  String? _parseError;
   List<String>? _shopped;
 
   @override
@@ -118,6 +120,7 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
       setState(() {
         _saved = r.entries;
         _usedAi = r.usedAi;
+        _parseError = r.parseError;
         _phase = _Phase.done;
       });
     } catch (e) {
@@ -255,19 +258,35 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
         Center(child: TextButton.icon(onPressed: _start, icon: const Icon(Icons.mic_none), label: const Text('Użyj mikrofonu'))),
       ];
 
+  /// Opens the full edit sheet (amount in pieces or grams, meal, source) and refreshes the row.
+  Future<void> _editRow(Entry e) async {
+    await showEditEntry(context, e);
+    if (!mounted || e.id == null) return;
+    final fresh = await ref.read(dbProvider).entryById(e.id!);
+    setState(() {
+      _saved = [
+        for (final x in _saved)
+          if (x.id != e.id) x else ?fresh
+      ];
+    });
+  }
+
   Widget _resultRow(Entry e, {required bool last}) {
     final unknown = e.macros.kcal == 0;
     return InkWell(
-      onTap: unknown ? () => _estimateEntry(e) : null,
+      onTap: unknown ? () => _estimateEntry(e) : () => _editRow(e),
       child: Container(
         constraints: const BoxConstraints(minHeight: 60),
         decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.line), bottom: last ? BorderSide(color: AppColors.line) : BorderSide.none)),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
               Text(e.name, style: fig(16, weight: 600)),
               Text(unknown ? 'Brak wartości, dotknij, żeby oszacować AI' : '${n0(e.grams)} g · ${macroText(e.macros)}',
                   style: fig(14, color: unknown ? AppColors.warn : AppColors.text2)),
+              if (!unknown && e.source.isNotEmpty)
+                Text(_shortSource(e.source), maxLines: 1, overflow: TextOverflow.ellipsis, style: fig(12, color: AppColors.text2)),
             ]),
           ),
           if (unknown)
@@ -278,6 +297,8 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
       ),
     );
   }
+
+  String _shortSource(String s) => s.startsWith('http') ? 'Źródło: ${Uri.tryParse(s)?.host.replaceFirst('www.', '') ?? s}' : 'Źródło: $s';
 
   List<Widget> _done() {
     final shopped = _shopped;
@@ -323,8 +344,10 @@ class _VoiceSheetState extends ConsumerState<_VoiceSheet> {
       ),
       const SizedBox(height: 12),
       Text.rich(TextSpan(style: fig(14, color: AppColors.text3, height: 20 / 14), children: [
-        const TextSpan(text: 'Dotknij pozycję, żeby zmienić gramy.'),
-        if (!_usedAi) ...[
+        const TextSpan(text: 'Dotknij pozycję, żeby zmienić ilość (sztuki lub gramy).'),
+        if (!_usedAi && _parseError != null)
+          TextSpan(text: ' AI nie odpowiedziało ($_parseError), więc użyłem trybu prostego.')
+        else if (!_usedAi) ...[
           const TextSpan(text: ' Bez AI zdania rozumiem słabo. '),
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,

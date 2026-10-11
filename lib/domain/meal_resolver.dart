@@ -6,8 +6,10 @@ import 'models.dart';
 
 /// A parsed item matched to nutrition data.
 class ResolvedItem {
-  ResolvedItem(this.name, this.grams, this.macros, {this.estimated = false, this.unknown = false});
+  ResolvedItem(this.name, this.grams, this.macros, {this.estimated = false, this.unknown = false, this.pieceG = 0, this.pieceLabel = '', this.source = ''});
   final String name;
+  final double pieceG;
+  final String pieceLabel, source;
   final double grams;
   final Macros macros;
   final bool estimated;
@@ -93,13 +95,17 @@ class MealResolver {
     }
     if (food.id != null) await db.touchFood(food.id!);
     final grams = _gramsFor(it, food);
-    return ResolvedItem(food.title, grams, food.per(grams), estimated: estimated);
+    return ResolvedItem(food.title, grams, food.per(grams),
+        estimated: estimated, pieceG: food.pieceG, pieceLabel: food.servingLabel, source: food.sourceNote);
   }
 
+  /// Quantity -> grams. A count only multiplies a real piece weight ("2 jajka" = 2 x 55 g);
+  /// for foods without one the model's total estimate is used, never count x 100 g.
   double _gramsFor(ParsedItem it, Food f) {
-    final qty = (it.qty != null && it.qty! > 0) ? it.qty! : 1.0;
-    // If the item has a natural serving ("1 jajko"), count × serving beats a guessed total.
-    if (it.qty != null && f.servingLabel.isNotEmpty && f.servingG > 0) return qty * f.servingG;
-    return it.grams ?? qty * f.servingG;
+    final hasPiece = f.pieceG > 0;
+    final qty = (it.qty != null && it.qty! > 0) ? it.qty! : null;
+    if (qty != null && hasPiece) return qty * f.servingG;
+    if (it.grams != null && it.grams! > 0) return it.grams!;
+    return hasPiece ? (qty ?? 1) * f.servingG : f.servingG;
   }
 }

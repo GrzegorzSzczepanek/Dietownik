@@ -81,7 +81,7 @@ final List<Food> genericFoods = [
   _w('Śledź w oleju', 250, 14, 2, 21, 60, '2 filety'),
   _w('Makrela wędzona', 305, 19, 0, 25, 100),
   _w('Pstrąg', 141, 20, 0, 6, 150),
-  _w('Krewetki', 85, 20, 0.2, 0.5, 100),
+  _w('Krewetki', 85, 20, 0.2, 0.5, 10, '1 krewetka'),
   _w('Pałeczki surimi', 95, 7, 15, 0.5, 15, '1 pałeczka'),
   // nabiał, jaja
   _w('Mleko 3,2%', 61, 3.2, 4.8, 3.2, 250, '1 szklanka'),
