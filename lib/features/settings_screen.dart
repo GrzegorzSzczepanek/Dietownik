@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -152,6 +153,20 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           Text('Twoje dane', style: fig(18, weight: 700)),
           const SizedBox(height: 4),
+          NavRow(
+            minHeight: 60,
+            title: 'Widget na ekran główny',
+            subtitle: 'Kalorie i zapis posiłku bez otwierania aplikacji',
+            onTap: () async {
+              final ok = await HomeWidget.isRequestPinWidgetSupported() ?? false;
+              if (!context.mounted) return;
+              if (ok) {
+                await HomeWidget.requestPinWidget(androidName: 'DietownikWidgetProvider');
+              } else {
+                toast(context, 'Przytrzymaj pusty ekran główny → Widżety → Dietownik.');
+              }
+            },
+          ),
           NavRow(minHeight: 52, title: 'Zapisz kopię zapasową', onTap: () => _backup(context, ref), trailing: const SizedBox.shrink()),
           NavRow(minHeight: 52, title: 'Przywróć z kopii', onTap: () => _restore(context, ref), trailing: const SizedBox.shrink()),
           NavRow(minHeight: 52, bottomLine: true, title: 'Importuj produkty z CSV', subtitle: 'nazwa; marka; kcal; białko; węgle; tłuszcz; porcja g; na; kod', onTap: () => _importCsv(context, ref), trailing: const SizedBox.shrink()),

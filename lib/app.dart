@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme.dart';
 import 'features/onboarding_screen.dart';
+import 'features/oko_screen.dart';
+import 'features/scan_screen.dart';
+import 'features/voice_sheet.dart';
 import 'features/shell.dart';
 import 'providers.dart';
+import 'widget_sync.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
 
 class DietownikApp extends ConsumerStatefulWidget {
   const DietownikApp({super.key});
@@ -17,15 +24,41 @@ class _DietownikAppState extends ConsumerState<DietownikApp> {
   void initState() {
     super.initState();
     // Re-plan reminders on launch; a logged meal drops that slot's nudge.
-    WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(reminderSchedulerProvider).sync());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(reminderSchedulerProvider).sync();
+      _syncWidget();
+    });
+    // Buttons on the home-screen widget open the matching screen.
+    HomeWidget.initiallyLaunchedFromHomeWidget().then(_openFromWidget);
+    HomeWidget.widgetClicked.listen(_openFromWidget);
+  }
+
+  void _syncWidget() => syncHomeWidget(ref.read(dbProvider), ref.read(goalsProvider));
+
+  void _openFromWidget(Uri? uri) {
+    final ctx = navigatorKey.currentContext;
+    if (uri == null || ctx == null) return;
+    switch (uri.host) {
+      case 'mic':
+        showVoiceSheet(ctx);
+      case 'scan':
+        Navigator.push(ctx, MaterialPageRoute(builder: (_) => const ScanScreen()));
+      case 'oko':
+        Navigator.push(ctx, MaterialPageRoute(builder: (_) => const OkoScreen()));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(dataVersionProvider, (_, _) => ref.read(reminderSchedulerProvider).sync());
+    ref.listen(dataVersionProvider, (_, _) {
+      ref.read(reminderSchedulerProvider).sync();
+      _syncWidget();
+    });
+    ref.listen(goalsProvider, (_, _) => _syncWidget());
     return MaterialApp(
       title: 'Dietownik',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: ThemeMode.system,
