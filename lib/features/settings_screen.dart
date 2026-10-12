@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -16,6 +17,7 @@ import '../notifications/reminders.dart';
 import '../providers.dart';
 import 'usage_screen.dart';
 import 'weight_screen.dart';
+import '../core/app_update.dart';
 import 'api_provider_screen.dart';
 import 'common.dart';
 import 'local_models_screen.dart';
@@ -167,11 +169,27 @@ class SettingsScreen extends ConsumerWidget {
               }
             },
           ),
+          NavRow(
+            minHeight: 60,
+            title: 'Sprawdź aktualizacje',
+            subtitle: 'Wersja z GitHuba, bez śledzenia',
+            onTap: () async {
+              final service = UpdateService();
+              final (u, ok) = await service.checkNow();
+              if (!context.mounted) return;
+              if (u != null) {
+                showUpdateDialog(context, u, service);
+              } else {
+                final v = (await PackageInfo.fromPlatform()).version;
+                if (context.mounted) toast(context, ok ? 'Masz najnowszą wersję ($v).' : 'Nie udało się sprawdzić. Sprawdź internet.');
+              }
+            },
+          ),
           NavRow(minHeight: 52, title: 'Zapisz kopię zapasową', onTap: () => _backup(context, ref), trailing: const SizedBox.shrink()),
           NavRow(minHeight: 52, title: 'Przywróć z kopii', onTap: () => _restore(context, ref), trailing: const SizedBox.shrink()),
           NavRow(minHeight: 52, bottomLine: true, title: 'Importuj produkty z CSV', subtitle: 'nazwa; marka; kcal; białko; węgle; tłuszcz; porcja g; na; kod', onTap: () => _importCsv(context, ref), trailing: const SizedBox.shrink()),
           const SizedBox(height: 20),
-          Text('Dietownik 1.0.4 · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
+          Text('Dietownik · dane trzymane tylko na telefonie. Wartości oznaczone „~” są szacunkowe. Produkty z kodami: © uczestnicy Open Food Facts, licencja ODbL.',
               style: fig(13, color: AppColors.text2, height: 18 / 13)),
         ]),
       ),

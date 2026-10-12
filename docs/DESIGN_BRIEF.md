@@ -98,10 +98,8 @@ wersja angielska, wersja release z własnym podpisem.
 - Domyślna ikona i ekran startowy Fluttera.
 - Hierarchia ekranu Dziś jest gęsta: rozważyć, co zostaje nad linią zgięcia.
 
-## Zrzuty ekranu (docs/screens/)
-01 Dziś (pusty) · 02 mikrofon: słucham · 03 mikrofon: pisanie · 04 mikrofon: podsumowanie ·
-05–06 Dziś z wpisami · 07 Przepisy · 08 Porady · 09–10, 15 Ja · 11 Co mam w lodówce ·
-12 Zakupy · 13 Szukaj · 14 Skaner.
+## Zrzuty ekranu
+Aktualne zrzuty są w `docs/screenshots/`, makiety w `design/`.
 
 ## Problemy widoczne na zrzutach
 - Skaner: tytuł „Skaner" jest czarny na czarnym pasku (nieczytelny).

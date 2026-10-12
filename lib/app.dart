@@ -3,6 +3,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme.dart';
+import 'core/app_update.dart';
 import 'features/onboarding_screen.dart';
 import 'features/oko_screen.dart';
 import 'features/scan_screen.dart';
@@ -27,10 +28,21 @@ class _DietownikAppState extends ConsumerState<DietownikApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(reminderSchedulerProvider).sync();
       _syncWidget();
+      _checkForUpdate();
     });
     // Buttons on the home-screen widget open the matching screen.
     HomeWidget.initiallyLaunchedFromHomeWidget().then(_openFromWidget);
     HomeWidget.widgetClicked.listen(_openFromWidget);
+  }
+
+  /// Ask about a new release only when one exists and the user has not postponed it.
+  Future<void> _checkForUpdate() async {
+    await Future<void>.delayed(const Duration(seconds: 4)); // never compete with startup
+    if (!mounted || !ref.read(onboardedProvider)) return;
+    final service = UpdateService();
+    final u = await service.checkAutomatically();
+    final ctx = navigatorKey.currentContext;
+    if (u != null && ctx != null && ctx.mounted) showUpdateDialog(ctx, u, service);
   }
 
   void _syncWidget() => syncHomeWidget(ref.read(dbProvider), ref.read(goalsProvider));
