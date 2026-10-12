@@ -45,6 +45,16 @@ void main() {
     expect(isNewerVersion('1.0.4+9', '1.0.4+1'), isFalse); // build numbers never trigger a prompt
   });
 
+  test('release notes are shown as short plain text', () {
+    const md = '## Dietownik 1.0.6\n\n**What\'s new**\n- Voice fix, see [docs](https://x)\n- Update dialog\n\nSee `README`.';
+    final t = plainNotes(md);
+    expect(t.contains('#'), isFalse);
+    expect(t.contains('**'), isFalse);
+    expect(t.contains('`'), isFalse);
+    expect(t, contains('• Voice fix, see docs'));
+    expect(t.toLowerCase().contains('dietownik 1.0.6'), isFalse);
+  });
+
   test('APK is chosen by CPU architecture', () {
     final assets = [
       {'name': 'a-arm64.apk', 'browser_download_url': 'u1'},

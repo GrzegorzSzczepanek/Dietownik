@@ -35,6 +35,26 @@ bool isNewerVersion(String latest, String current) {
   return false;
 }
 
+/// Release notes arrive as Markdown; show a short plain-text version in the dialog.
+String plainNotes(String md, {int maxLines = 5, int maxChars = 320}) {
+  final lines = <String>[];
+  for (var raw in md.split('\n')) {
+    var l = raw
+        .replaceAll(RegExp(r'^\s*#+\s*'), '')
+        .replaceAll(RegExp(r'^\s*[-*]\s+'), '• ')
+        .replaceAll('**', '')
+        .replaceAll('`', '')
+        .replaceAllMapped(RegExp(r'\[([^\]]+)\]\([^)]*\)'), (m) => m.group(1)!)
+        .trim();
+    if (l.isEmpty) continue;
+    if (RegExp(r'^dietownik \d').hasMatch(l.toLowerCase())) continue; // the release title repeated in the body
+    lines.add(l);
+    if (lines.length >= maxLines) break;
+  }
+  final out = lines.join('\n');
+  return out.length > maxChars ? '${out.substring(0, maxChars)}…' : out;
+}
+
 /// Picks the APK matching the phone's CPU: arm64 builds for 64-bit phones, armv7 for old 32-bit ones.
 String? pickApkUrl(List<Map<String, dynamic>> assets, List<String> abis) {
   final apks = [
@@ -148,7 +168,7 @@ class UpdateService {
 
 /// Asks whether to download. "Później" is quiet for 3 days; "Pomiń tę wersję" until the next release.
 Future<void> showUpdateDialog(BuildContext context, AppUpdate u, UpdateService service) {
-  final notes = u.notes.length > 400 ? '${u.notes.substring(0, 400)}…' : u.notes;
+  final notes = plainNotes(u.notes);
   return showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -162,17 +182,19 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdate u, UpdateService s
           ],
           const SizedBox(height: 8),
           Text('Dane zostają na telefonie. Plik zainstalujesz jako aktualizację.', style: fig(13, color: AppColors.text2)),
+          Transform.translate(
+            offset: const Offset(-12, 0),
+            child: TextButton(
+              onPressed: () {
+                service.skipVersion(u.latest);
+                Navigator.pop(ctx);
+              },
+              child: Text('Pomiń tę wersję', style: fig(14, weight: 600, color: AppColors.text2)),
+            ),
+          ),
         ]),
       ),
-      actionsOverflowAlignment: OverflowBarAlignment.end,
       actions: [
-        TextButton(
-          onPressed: () {
-            service.skipVersion(u.latest);
-            Navigator.pop(ctx);
-          },
-          child: Text('Pomiń tę wersję', style: fig(14, weight: 600, color: AppColors.text2)),
-        ),
         TextButton(
           onPressed: () {
             service.snooze();
